@@ -1,0 +1,29 @@
+# Datos: descarga cruda de Zenodo y archivos procesados (pesados, se regeneran con los scripts)
+data/
+*.nc
+*.zip
+*.tif
+*.tiff
+
+# Corridas de entrenamiento: checkpoints y logs
+runs/
+*.pt
+*.pth
+*.ckpt
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Sistema operativo
+Thumbs.db
+desktop.ini
+.DS_Store
