@@ -1,0 +1,10 @@
+# Pipeline de datos y conversión a NeuralHydrology
+numpy
+pandas>=2.2
+pyarrow
+pyyaml
+xarray
+netCDF4
+
+# Modelo: instalar PyTorch con CUDA ANTES (ver https://pytorch.org/get-started/locally/)
+# neuralhydrology

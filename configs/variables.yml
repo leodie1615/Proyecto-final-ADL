@@ -1,0 +1,125 @@
+# Configuración del pipeline de datos de CAMELS-COL.
+# Fuente única de verdad sobre qué variables usa el modelo; la lee src/preprocess.py.
+
+rutas:
+  series: data/datos-originales/3_Hydrometeorological_data_filtrado
+  atributos: data/datos-originales
+  reporte_limpieza: data/datos-originales/3_Hydrometeorological_data_filtrado/cleaning_report.csv
+  salida: data/processed
+
+periodos:
+  calendario: ["1981-01-01", "2022-12-31"]
+  train: ["1981-01-01", "2010-12-31"]
+  validation: ["2011-01-01", "2015-12-31"]
+  test: ["2016-01-01", "2022-12-31"]
+
+# Los forzantes faltan los mismos días que el caudal. Solo se interpolan huecos
+# de hasta esta longitud; los más largos quedan vacíos (no se inventa lluvia).
+# 7 días conserva ~83 % de las ventanas de entrenamiento; 30 días, ~91 %.
+interpolacion_max_dias: 7
+
+# Columna en el archivo .txt -> nombre en el proyecto
+forzantes:
+  Precipitacion: pr
+  ETP_: poten_evapo
+  Temperatura_minima: t_min
+  Temperatura_maxima: t_max
+
+objetivo:
+  columna: Caudal            # m³/s en el archivo
+  estado: Caudal_estado      # ok / no_data / frozen / spike
+
+# Atributos estáticos que entran al modelo.
+# Los marcados "calculado" se generan en el pipeline; el resto se toma del dataset.
+atributos_modelo:
+  fisiograficos:
+    - log_area               # calculado: log10(area)
+    - gravelius_index
+    - factor_form
+    - maximum_ele
+    - mean_ele
+    - minimum_ele
+    - streng_chanel
+    - equi_slope
+    - cn_catchment
+    - tc_Johnstone           # reemplaza a tc_representative, cuyos valores están asignados a otras cuencas (notebook 2.8)
+  climaticos:                # todos calculados con los forzantes del período train
+    - p_mean
+    - pet_mean
+    - aridity
+    - high_prec_freq
+    - high_prec_dur
+    - low_prec_freq
+    - low_prec_dur
+  cobertura:
+    - forest_perc
+    - nat_non_forest_form_perc
+    - agricul_livestock_perc
+    - non_vegeted_perc
+    - water_bodies_perc_cob  # renombrado: el mismo nombre existe en suelos
+    - non_identi_land_perc
+  geologia:
+    - unconso_depo_perc
+    - hypabyssal_rock_perc
+    - metamor_rock_perc
+    - plutonic_rock_perc
+    - sedimen_rock_perc
+    - volcanic_rock_perc
+    # volcaniclastic_rock_perc excluido: es copia de volcanic_rock_perc (corr = 1,0)
+  suelos:
+    - inceptisols_perc
+    - entisols_perc
+    - andisols_perc
+    - alfisols_perc
+    - vertisols_perc
+    - ultisols_perc
+    - oxisols_perc
+    - mollisols_perc
+    - aridisols_perc
+    - histosols_perc
+    - urban_perc
+    - eroded_misce_perc
+    - rocky_misce_perc
+    - water_bodies_perc_suelo  # renombrado
+  capacidad_uso:
+    - class_1
+    - class_2
+    - class_3
+    - class_4
+    - class_5
+    - class_6
+    - class_7
+    - class_8
+
+# Atributos de porcentaje casi vacíos: se descartan si menos de `min_frac_cuencas`
+# de las cuencas tienen más de `umbral_pct` % de su área en esa clase.
+degenerados:
+  grupos: [cobertura, geologia, suelos, capacidad_uso]
+  umbral_pct: 1.0
+  min_frac_cuencas: 0.05
+
+# Columnas que se conservan en la tabla de atributos pero NO entran al modelo.
+auxiliares:
+  - region
+  - area                     # para convertir el caudal a mm/día
+  - gauge_lat                # EPSG:3395 (metros), para anidamiento y mapas
+  - gauge_lon
+  - gauge_department
+  - gauge_star
+  - gauge_end
+  - gauge_missing
+
+# Firmas hidrológicas: NUNCA como entrada (se calculan con el caudal observado).
+# Se conservan solo para analizar resultados.
+firmas_hidrologicas:
+  - q_mean
+  - runoff_ratio
+  - stream_elas
+  - slope_fdc
+  - baseflow_index
+  - Q5
+  - Q95
+  - high_q_freq
+  - high_q_dur
+  - low_q_freq
+  - low_q_dur
