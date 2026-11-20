@@ -1,0 +1,24 @@
+gauge_id,grupo,región,puntos,área km²,lluvia CHIRPS mm/año,lluvia ERA5-Land mm/año,r diaria,r 5 días,Q/P con CHIRPS,Q/P con ERA5-Land
+11047010,1. Lluvia insuficiente,Caribbean,6,5452,6789,8707,0.36,0.38,0.87,0.67
+11077010,1. Lluvia insuficiente,Caribbean,6,15669,5867,10660,0.43,0.51,0.89,0.49
+11037020,1. Lluvia insuficiente,Caribbean,2,264,7555,8178,0.25,0.2,0.92,0.85
+47017150,1. Lluvia insuficiente,Amazon,4,393,4726,2376,0.18,0.2,0.88,1.75
+11057020,1. Lluvia insuficiente,Caribbean,6,10613,6712,12592,0.42,0.51,0.9,0.48
+23057140,1. Lluvia insuficiente,Magdalena-Cauca,6,2314,3583,2148,0.31,0.48,0.95,1.59
+52017080,1. Lluvia insuficiente,Pacific,2,247,2157,4875,0.34,0.56,1.07,0.47
+51027020,1. Lluvia insuficiente,Pacific,3,422,1845,4615,0.25,0.47,1.02,0.41
+52017070,1. Lluvia insuficiente,Pacific,1,167,2507,3479,0.33,0.59,0.91,0.66
+24017610,3. Mala sincronía,Magdalena-Cauca,1,71,776,1351,0.34,0.59,1.4,0.8
+27027060,3. Mala sincronía,Magdalena-Cauca,3,248,2558,3433,0.4,0.64,0.46,0.34
+23107030,3. Mala sincronía,Magdalena-Cauca,3,309,2976,2134,0.37,0.55,0.36,0.51
+21167090,3. Mala sincronía,Magdalena-Cauca,3,341,1821,5039,0.28,0.4,0.46,0.16
+22077060,3. Mala sincronía,Magdalena-Cauca,3,271,1716,3149,0.4,0.6,0.65,0.35
+23107020,3. Mala sincronía,Magdalena-Cauca,6,2449,2877,2604,0.46,0.62,0.36,0.4
+52037010,3. Mala sincronía,Pacific,2,336,1678,2037,0.37,0.68,0.79,0.65
+21017050,3. Mala sincronía,Magdalena-Cauca,1,269,1997,7592,0.16,0.17,0.5,0.13
+21167080,3. Mala sincronía,Magdalena-Cauca,3,447,1870,3179,0.45,0.67,0.65,0.38
+29037020,5. Ya cumple,Magdalena-Cauca,6,260372,2166,4708,0.56,0.74,0.41,0.19
+35117010,5. Ya cumple,Orinoco,6,25894,2777,1947,0.49,0.71,0.7,1.0
+35107030,5. Ya cumple,Orinoco,6,14459,3063,2055,0.46,0.66,0.62,0.92
+26207030,5. Ya cumple,Magdalena-Cauca,6,29115,1982,4782,0.53,0.73,0.45,0.19
+35127010,5. Ya cumple,Orinoco,6,9865,2843,2431,0.52,0.73,0.58,0.68

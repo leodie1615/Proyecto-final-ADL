@@ -5,6 +5,14 @@ pyarrow
 pyyaml
 xarray
 netCDF4
+scipy
+matplotlib
 
 # Modelo: instalar PyTorch con CUDA ANTES (ver https://pytorch.org/get-started/locally/)
 # neuralhydrology
+
+# LightGBM (modelado, secciones 8.3 a 8.7)
+lightgbm
+
+# Solo para descargar ERA5-Land (preprocesamiento, sección 2.1); requiere cuenta de Copernicus CDS
+# cdsapi
