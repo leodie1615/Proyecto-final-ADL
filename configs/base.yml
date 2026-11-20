@@ -4,8 +4,8 @@ run_dir: runs
 dataset: generic
 data_dir: data/processed
 train_basin_file: configs/basins/todas.txt
-validation_basin_file: configs/basins/todas.txt
-test_basin_file: configs/basins/todas.txt
+validation_basin_file: configs/basins/validacion.txt
+test_basin_file: configs/basins/prueba.txt
 train_start_date: 01/01/1981
 train_end_date: 31/12/2010
 validation_start_date: 01/01/2011
@@ -78,7 +78,7 @@ head: regression
 output_activation: linear
 seq_length: 365
 predict_last_n: 1
-batch_size: 64
+batch_size: 256
 epochs: 30
 optimizer: Adam
 learning_rate: 0.0005
@@ -87,9 +87,11 @@ clip_gradient_norm: 1
 early_stopping: true
 patience_early_stopping: 5
 minimum_epochs_before_early_stopping: 5
+patience_dynamic_learning_rate: 30
+factor_dynamic_learning_rate: 0.5
 seed: 42
 validate_every: 1
-validate_n_random_basins: 248
+validate_n_random_basins: 195
 metrics:
 - NSE
 - KGE

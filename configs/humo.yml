@@ -78,7 +78,7 @@ head: regression
 output_activation: linear
 seq_length: 365
 predict_last_n: 1
-batch_size: 64
+batch_size: 256
 epochs: 2
 optimizer: Adam
 learning_rate: 0.0005
@@ -87,6 +87,8 @@ clip_gradient_norm: 1
 early_stopping: false
 patience_early_stopping: 5
 minimum_epochs_before_early_stopping: 5
+patience_dynamic_learning_rate: 30
+factor_dynamic_learning_rate: 0.5
 seed: 42
 validate_every: 1
 validate_n_random_basins: 20
