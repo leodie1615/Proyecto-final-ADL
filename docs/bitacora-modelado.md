@@ -45,6 +45,11 @@ Registro de los pasos, decisiones y resultados del modelado, para el informe y l
       - los resúmenes de 8.4, 8.6 y 8.7;
       - las configuraciones de las corridas.
     - Las celdas que entrenan o descargan tienen su bandera `EJECUTAR_*` en `False`; con la bandera así, muestran lo guardado.
+  - **20/11: se reorganizó el notebook de modelado** en 11 secciones, con texto conciso y solo las salidas que aportan.
+    - Equivalencias con los números que usa esta bitácora: 4 → 3, 5 → 4, 6 → 5, 8 → 6.1, 8.3 → 6.2, 8.4 a 8.7 → 6.4 a 6.7, 9 → 7, 10 → 8, 11 → 9 y 10, 12 → 11.
+    - Se quitaron la prueba de humo (3), el ajuste de `hidden_size` (7), el lote 64 (8.1) y el entrenamiento con 1981–2015 (8.2). Quedan resumidos en las secciones 2.2, 2.3 y 6.
+    - Nuevo: 6.3, las variables de ERA5-Land y su relación con las que ya había.
+    - Los resultados de cada etapa quedaron en las secciones 9 y 10; la 9 incluye la climatología.
   - **Catálogo de alternativas para mejorar el modelo y exploración de transfer learning y fine-tuning** (sección 23; `docs/alternativas-mejora.csv`). Ninguna promete llegar a 0,70. La apuesta más barata con evidencia es el fine-tuning por cuenca; el transfer learning desde Caravan tiene más sentido para el flujo espacial.
 
 ---

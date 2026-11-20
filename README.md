@@ -22,7 +22,7 @@ El flujo espacial (cuencas no aforadas, 5 particiones) está implementado pero n
 | Archivo o carpeta | Contenido |
 |---|---|
 | `proyecto-final-preprocesamiento.ipynb` | **Parte 1.** Sección 1: CAMELS-COL limpio en `data/processed/`. Sección 2: 15 forzantes de ERA5-Land y una segunda base en `data/processed_era5land/` |
-| `proyecto-final-modelado.ipynb` | **Parte 2.** Configuración, prueba de humo, particiones, entrenamiento y evaluación. Las secciones 8.4 a 8.7 tienen la selección de variables, la confirmación con el LSTM y la evaluación final |
+| `proyecto-final-modelado.ipynb` | **Parte 2.** Configuración, estrategia, particiones espaciales, etapa 1 (flujo temporal: LSTM, LightGBM, ERA5-Land, selección de variables y modelo final), etapa 2 (flujo espacial), baselines y resultados de cada etapa |
 | `docs/bitacora-modelado.md` | **Registro de cada paso, decisión y resultado.** Conviene empezar por el resumen del inicio |
 | `docs/registro-variables.csv` | Variables usadas en cada iteración, con su fuente, su cálculo y su efecto medido |
 | `docs/variables-candidatas.csv`, `docs/alternativas-mejora.csv` | Catálogos de variables y de alternativas para mejorar el modelo |
