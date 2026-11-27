@@ -1,0 +1,8 @@
+comparación,métrica,cuencas,referencia,comparado,dif. mediana,cuencas que mejoran,p (Wilcoxon)
+LSTM − climatología de donantes,NSE,95,-0.0805,0.2755,0.3102,79,0.0
+LSTM − vecino más cercano,NSE,95,-0.4264,0.2755,0.6017,83,0.0
+LSTM − LightGBM,NSE,95,0.2572,0.2755,0.012,51,0.997
+Promedio − LSTM,NSE,95,0.2755,0.2758,0.0113,59,0.0034
+LSTM − vecino más cercano (KGE),KGE,95,0.2311,0.4378,0.1526,66,0.0
+LSTM − LightGBM (KGE),KGE,95,0.445,0.4378,0.0253,55,0.2576
+No vista − vista (2016–2022),NSE,62,0.4255,0.2479,-0.1365,15,0.0
