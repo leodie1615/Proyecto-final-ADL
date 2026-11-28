@@ -21,6 +21,7 @@ COLORES = {"sim_lstm": "#257de0", "lgbm": "#f47230", "vecino": "#00b894", "clim_
 NOMBRES = {"sim_lstm": "LSTM regional", "lgbm": "LightGBM regional", "vecino": "Vecino más cercano",
            "clim_donantes": "Climatología de donantes"}
 COLOR_BASE = "#a35bd6"   # LSTM base, solo en las figuras de otra variante
+ETIQUETAS = {"era5l": "ERA5-Land"}
 plt.rcParams.update({"font.size": 9, "axes.edgecolor": TEXTO2, "axes.labelcolor": TEXTO, "xtick.color": TEXTO2,
                      "ytick.color": TEXTO2, "axes.spines.top": False, "axes.spines.right": False,
                      "axes.grid": True, "grid.color": REJILLA, "grid.linewidth": 0.6, "savefig.dpi": 300})
@@ -49,11 +50,11 @@ def cdf(cuencas, sufijo="", variante="base"):
 def nombre(c, variante):
     if c == "sim_lstm_base":
         return "LSTM base"
-    return f"LSTM {variante}" if c == "sim_lstm" and variante != "base" else NOMBRES[c]
+    return f"LSTM {ETIQUETAS.get(variante, variante)}" if c == "sim_lstm" and variante != "base" else NOMBRES[c]
 
 
 def titulo(variante):
-    return "" if variante == "base" else f", {variante}"
+    return "" if variante == "base" else f", {ETIQUETAS.get(variante, variante)}"
 
 
 def mapa(cuencas, sufijo="", variante="base"):
