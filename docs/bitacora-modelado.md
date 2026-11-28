@@ -969,12 +969,14 @@ Diferencias por cuenca (A − B):
 | LightGBM regional | 0,257 | 0,445 | 25 | 24 |
 | Promedio LSTM base + LightGBM | 0,276 | 0,436 | 19 | 27 |
 | Vecino más cercano (caudal observado) | −0,426 | 0,231 | 65 | 14 |
+| IDW de 5 estaciones, 1/d² (caudal observado; 28/11) | −0,114 | 0,288 | 54 | 14 |
 | Climatología de 5 donantes | −0,081 | −0,058 | 56 | 11 |
 | Meta de la propuesta | 0,50 | — | — | — |
 
 - **El LSTM sirve para cuencas sin estación.** El base supera a la climatología de donantes en 79 de 95 cuencas y al vecino en 83, con p ≈ 0 en las dos.
 - **No llega a la meta de 0,50:** solo una de cada cuatro cuencas la alcanza.
 - **Frente a LightGBM, empate** (51 de 95, p = 1,0).
+- **IDW** (mejora B2, 28/11; `python src/baselines_espacial.py --solo-idw`): mejora al vecino, pero el LSTM base lo supera en 74 de 95 cuencas y el de ERA5-Land en 76 (p ≈ 0).
 - **Costo de no tener estación** (62 cuencas, 2016–2022): de 0,425 a 0,248 en la variante base y de 0,480 a 0,242 con ERA5-Land. En las dos se pierde lo mismo en mediana por cuenca (−0,14).
 - **ERA5-Land frente a base:** 0,300 frente a 0,276, con 54 de 95 cuencas mejorando, pero p = 0,08: es una tendencia. Con dos semillas daba 0,248, arrastrado por la semilla 43 (0,207). El ensamble es necesario.
 - **Por región (base / ERA5-Land):** Orinoco 0,64 / 0,72; Caribe 0,26 / 0,29; Amazonía 0,23 / 0,29; Pacífico 0,15 / 0,16; Magdalena-Cauca −0,03 / −0,51 (solo 6 cuencas). En el Pacífico, LightGBM es mejor (0,36).

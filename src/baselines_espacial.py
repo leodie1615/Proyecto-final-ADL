@@ -1,6 +1,6 @@
 """Etapa 2: referencias para las cuencas retenidas de cada partición espacial (sin caudal de la cuenca retenida).
 
-Uso, desde la raíz del repositorio:  python src/baselines_espacial.py
+Uso, desde la raíz del repositorio:  python src/baselines_espacial.py [--solo-idw]
 
 Escribe runs/flujo_espacial/baselines.parquet, con una fila por cuenca retenida y día (1981–2022):
 - `clim_donantes`: climatología (1981–2010) promedio de las 5 cuencas de entrenamiento más parecidas en los 48
@@ -9,6 +9,10 @@ Escribe runs/flujo_espacial/baselines.parquet, con una fila por cuenca retenida 
   5 más cercanas por la distancia entre aforos. Regionalización por proximidad espacial (transferencia por área,
   porque el caudal ya está en mm/día). Usa caudal observado de otras cuencas en los mismos días: es la referencia
   clásica más exigente, y no cumple la regla del proyecto para el modelo, por eso solo es referencia.
+- `idw`: promedio del caudal diario observado de las 5 estaciones de entrenamiento más cercanas, ponderado por el
+  inverso del cuadrado de la distancia, con las que tengan dato ese día (Pool et al., 2021; mejora B2 del plan).
+  Como el vecino, usa caudal observado de otras cuencas: solo es referencia. `--solo-idw` lo agrega a un
+  `baselines.parquet` ya calculado, sin reentrenar LightGBM.
 - `lgbm`: LightGBM con las 83 variables de la sección 6.2 (forzantes, medias, índices antecedentes, día del año y
   atributos), entrenado con las cuencas de entrenamiento de la partición, como el LSTM.
 
@@ -86,8 +90,45 @@ def distancia_km(lat1: np.ndarray, lon1: np.ndarray, lat2: np.ndarray, lon2: np.
     return 2 * 6371 * np.arcsin(np.sqrt(a))
 
 
+def idw(g: str, entrenamiento: list[str], aux: pd.DataFrame, caudal: pd.DataFrame) -> pd.Series:
+    """Caudal de la cuenca g por IDW (1/d²) de las N_DONANTES estaciones de entrenamiento más cercanas con dato."""
+    d = pd.Series(distancia_km(aux.at[g, "gauge_lat"], aux.at[g, "gauge_lon"],
+                               aux.loc[entrenamiento, "gauge_lat"].to_numpy(),
+                               aux.loc[entrenamiento, "gauge_lon"].to_numpy()), index=entrenamiento)
+    cercanas = d.nsmallest(N_DONANTES)
+    q = caudal[cercanas.index]
+    w = q.notna() * (1 / cercanas.to_numpy() ** 2)
+    return (q.fillna(0) * w).sum(axis=1) / w.sum(axis=1).replace(0, np.nan)
+
+
+def leer_auxiliares() -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Atributos auxiliares con coordenadas en grados y caudal diario observado (fechas × cuencas)."""
+    aux = pd.read_csv(DIR_BASE / "atributos.csv", dtype={"gauge_id": str}, index_col="gauge_id")
+    aux["gauge_lat"], aux["gauge_lon"] = mercator_a_grados(aux["gauge_lat"], aux["gauge_lon"])
+    assert aux["gauge_lat"].between(-5, 13).all() and aux["gauge_lon"].between(-80, -66).all()
+    tabla = pd.read_parquet(DIR_BASE / "camels_col_diario.parquet", columns=["gauge_id", "date", OBJETIVO])
+    tabla["gauge_id"] = tabla["gauge_id"].astype(str)
+    return aux, tabla.pivot(index="date", columns="gauge_id", values=OBJETIVO)
+
+
+def solo_idw() -> None:
+    """Agrega la columna `idw` al baselines.parquet existente."""
+    aux, caudal = leer_auxiliares()
+    base = pd.read_parquet(SALIDA)
+    base["gauge_id"] = base["gauge_id"].astype(str)
+    partes = []
+    for k in range(1, N_PARTICIONES + 1):
+        entrenamiento = lista(f"particion_{k}_entrenamiento.txt")
+        for g in lista(f"particion_{k}_prueba.txt"):
+            partes.append(idw(g, entrenamiento, aux, caudal).rename("idw").to_frame().assign(gauge_id=g))
+    nuevo = pd.concat(partes).rename_axis("date").reset_index()
+    base = base.drop(columns="idw", errors="ignore").merge(nuevo, on=["gauge_id", "date"], how="left")
+    base.to_parquet(SALIDA, index=False)
+    print(f"{SALIDA.relative_to(ROOT)}: columna idw agregada ({base['idw'].notna().mean():.1%} de días con valor)")
+
+
 def main() -> None:
-    """Calcula las tres referencias de cada partición y las guarda en `runs/flujo_espacial/baselines.parquet`."""
+    """Calcula las cuatro referencias de cada partición y las guarda en `runs/flujo_espacial/baselines.parquet`."""
     atributos = pd.read_csv(DIR_BASE / "attributes" / "atributos_modelo.csv", dtype={"gauge_id": str},
                             index_col="gauge_id")
     aux = pd.read_csv(DIR_BASE / "atributos.csv", dtype={"gauge_id": str}, index_col="gauge_id")
@@ -157,7 +198,8 @@ def main() -> None:
             pred = np.clip(modelo.predict(X[g].to_numpy(), num_iteration=modelo.best_iteration), 0, None)
             partes.append(pd.DataFrame({
                 "gauge_id": g, "particion": k, "date": caudal.index, "obs": caudal[g].to_numpy(),
-                "clim_donantes": clim_g.loc[claves].to_numpy(), "vecino": vecino.to_numpy(), "lgbm": pred,
+                "clim_donantes": clim_g.loc[claves].to_numpy(), "vecino": vecino.to_numpy(),
+                "idw": idw(g, entrenamiento, aux, caudal).to_numpy(), "lgbm": pred,
                 "dist_vecino_km": d_geo[vecinos[0]]}))
     salida = pd.concat(partes, ignore_index=True)
     salida.to_parquet(SALIDA, index=False)
@@ -165,4 +207,5 @@ def main() -> None:
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    solo_idw() if "--solo-idw" in sys.argv else main()

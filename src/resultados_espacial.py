@@ -141,7 +141,7 @@ def main(variante: str = "base") -> None:
     series = {}
     for g, b in base.groupby("gauge_id"):
         b = b.set_index("date").sort_index()
-        df = b[["particion", "obs", "clim_donantes", "vecino", "lgbm"]].copy()
+        df = b[["particion", "obs", "clim_donantes", "vecino", "lgbm"] + (["idw"] if "idw" in b else [])].copy()
         df["sim_lstm"] = lstm[g]["sim"].reindex(df.index)
         for s in semillas:
             df[f"sim_lstm_s{s}"] = por_semilla[s][g]["sim"].reindex(df.index)
@@ -158,6 +158,8 @@ def main(variante: str = "base") -> None:
     modelos = {PRINCIPAL: "sim_lstm", **{f"LSTM, semilla {s}": f"sim_lstm_s{s}" for s in semillas},
                "LightGBM regional": "lgbm", "Promedio LSTM + LightGBM": "promedio_lstm_lgbm",
                "Vecino más cercano (caudal observado)": "vecino", "Climatología de 5 donantes": "clim_donantes"}
+    if "idw" in base:
+        modelos["IDW de 5 estaciones (caudal observado)"] = "idw"
     for i, nombre in enumerate(otras):
         modelos[nombre] = f"sim_ref{i}"
     tablas = {(m, "1981–2022"): tabla_metricas(series, c) for m, c in modelos.items()}
@@ -180,6 +182,8 @@ def main(variante: str = "base") -> None:
                      comparar("Promedio − LSTM", L, tablas[("Promedio LSTM + LightGBM", "1981–2022")]),
                      comparar("LSTM − vecino más cercano (KGE)", tablas[("Vecino más cercano (caudal observado)", "1981–2022")], L, "KGE"),
                      comparar("LSTM − LightGBM (KGE)", tablas[("LightGBM regional", "1981–2022")], L, "KGE")]
+    if "idw" in base:
+        comparaciones.append(comparar("LSTM − IDW de 5 estaciones", tablas[("IDW de 5 estaciones (caudal observado)", "1981–2022")], L))
     for nombre in otras:
         B = tablas[(nombre, "1981–2022")]
         comparaciones += [comparar(f"{variante} − {nombre}", B, L), comparar(f"{variante} − {nombre} (KGE)", B, L, "KGE")]

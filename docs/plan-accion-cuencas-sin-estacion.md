@@ -139,7 +139,7 @@ Presupuesto medido el 27/11 en la RTX 3050: **unos 11 minutos por época** con 2
 | # | Tarea | Por qué (sección 2) | Costo | Condición |
 |---|---|---|---|---|
 | B1 | **Etapa 2 con ERA5-Land (C2)**: 19 forzantes y 47 atributos | Fue lo único que movió el flujo temporal (+0,024). La lluvia de ERA5 corrige donde CHIRPS se queda corta (Atrato, Pacífico), que son justo las regiones retenidas | 18 corridas de unos 42 min | ✅ Terminó el 28/11 a las 10:14 (18 corridas). Cuenca no vista: 0,300 frente a 0,276 del base (54 de 95 cuencas mejoran, p = 0,08: tendencia, no significativa). Mejora en Caribe (0,29 frente a 0,26) y Orinoco (0,72 frente a 0,64); empeora en Magdalena-Cauca (−0,51 frente a −0,03, 6 cuencas). Cuenca vista: 0,480 frente a 0,425. Resultados en `runs/flujo_espacial/era5l/` y `docs/flujo-espacial-era5l-*` |
-| B2 | IDW de 3 a 5 donantes como referencia | Pool 2021; Portugal 2026 | Minutos | Ninguna |
+| B2 | IDW de 3 a 5 donantes como referencia | Pool 2021; Portugal 2026 | Minutos | ✅ 28/11: IDW de 5 estaciones (1/d²) con NSE de −0,114 (el vecino, −0,426). El LSTM lo supera en 74 de 95 cuencas (base) y 76 (ERA5-Land), p ≈ 0 |
 | B3 | Transformer de NeuralHydrology en la etapa 2, 1 semilla | Lo pidió la profesora; Liu 2025 | Unas 4 a 8 h (medir antes con una época) | Después de A2 |
 | B4 | Agregados de forzantes como atributos: estacionalidad, bimodalidad de la lluvia, fracción de lluvia en cada temporada | *Better data or architecture* 2026 | 1 h, más 3,3 h de etapa 2 | Ninguna |
 | B5 | Embeddings de AlphaEarth (notebook, sección 11) | *Better data or architecture* 2026 | Medio: cuenta de Earth Engine | Solo si B4 muestra que los atributos importan |

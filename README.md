@@ -21,6 +21,7 @@ Predicción del caudal medio diario en 248 cuencas de Colombia (CAMELS-COL) con 
 |---|---|---|
 | Climatología de 5 donantes | −0,081 | −0,058 |
 | Vecino más cercano (caudal observado de otra estación) | −0,426 | 0,231 |
+| IDW de las 5 estaciones más cercanas (caudal observado) | −0,114 | 0,288 |
 | LightGBM regional | 0,257 | 0,445 |
 | LSTM con 4 forzantes y 48 atributos, ensamble de 3 semillas | 0,276 | 0,438 |
 | **LSTM con ERA5-Land, ensamble de 3 semillas** | **0,300** | **0,453** |

@@ -16,5 +16,7 @@ lightgbm
 
 # Solo para descargar ERA5-Land (preprocesamiento, sección 2.1); requiere cuenta de Copernicus CDS
 # cdsapi
+
+# Despliegue: exportar el LSTM a ONNX y comprobarlo (src/exportar_modelo.py)
 onnx
 onnxruntime
