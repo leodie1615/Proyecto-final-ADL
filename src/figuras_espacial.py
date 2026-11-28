@@ -21,7 +21,7 @@ COLORES = {"sim_lstm": "#257de0", "lgbm": "#f47230", "vecino": "#00b894", "clim_
 NOMBRES = {"sim_lstm": "LSTM regional", "lgbm": "LightGBM regional", "vecino": "Vecino más cercano",
            "clim_donantes": "Climatología de donantes"}
 COLOR_BASE = "#a35bd6"   # LSTM base, solo en las figuras de otra variante
-ETIQUETAS = {"era5l": "ERA5-Land"}
+ETIQUETAS = {"era5l": "ERA5-Land", "transformer": "Transformer"}
 plt.rcParams.update({"font.size": 9, "axes.edgecolor": TEXTO2, "axes.labelcolor": TEXTO, "xtick.color": TEXTO2,
                      "ytick.color": TEXTO2, "axes.spines.top": False, "axes.spines.right": False,
                      "axes.grid": True, "grid.color": REJILLA, "grid.linewidth": 0.6, "savefig.dpi": 300})
@@ -30,8 +30,8 @@ plt.rcParams.update({"font.size": 9, "axes.edgecolor": TEXTO2, "axes.labelcolor"
 def cdf(cuencas, sufijo="", variante="base"):
     fig, ax = plt.subplots(figsize=(4.2, 3.4))
     colores = dict(COLORES)
-    if "NSE_sim_lstm_base" in cuencas:
-        colores["sim_lstm_base"] = COLOR_BASE
+    if "NSE_sim_ref0" in cuencas:          # el primer modelo de referencia de otra variante
+        colores["sim_ref0"] = COLOR_BASE
     for c, color in colores.items():
         v = np.sort(cuencas[f"NSE_{c}"].dropna().clip(lower=-1).to_numpy())
         ax.step(v, np.arange(1, len(v) + 1) / len(v), where="post", color=color, lw=2,
@@ -48,8 +48,10 @@ def cdf(cuencas, sufijo="", variante="base"):
 
 
 def nombre(c, variante):
-    if c == "sim_lstm_base":
-        return "LSTM base"
+    if c == "sim_ref0":
+        return {"era5l": "LSTM base", "transformer": "LSTM ERA5-Land, s42"}.get(variante, "Referencia")
+    if c == "sim_lstm" and variante == "transformer":
+        return "Transformer"
     return f"LSTM {ETIQUETAS.get(variante, variante)}" if c == "sim_lstm" and variante != "base" else NOMBRES[c]
 
 
@@ -110,5 +112,5 @@ def main(variante="base"):
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    ap.add_argument("--variante", choices=("base", "era5l"), default="base")
+    ap.add_argument("--variante", choices=("base", "era5l", "transformer"), default="base")
     main(ap.parse_args().variante)

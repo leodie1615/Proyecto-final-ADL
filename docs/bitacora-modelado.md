@@ -6,7 +6,11 @@ Registro de los pasos, decisiones y resultados del modelado, para el informe y l
 
 ---
 
-## Resumen del estado (19/11/2026)
+## Resumen del estado (28/11/2026)
+
+- **27–28/11, etapa 2 (cuencas no vistas, sección 24):** en 95 cuencas retenidas por sistema de ríos, el LSTM con ERA5-Land logra un NSE mediano de 0,300 (el base 0,276). Supera a la climatología de donantes (−0,08) y al vecino más cercano (−0,43), y empata con LightGBM (0,26). No llega a la meta de 0,50. Por no tener estación se pierde unos 0,14 de NSE por cuenca.
+
+### Estado al 19/11/2026
 
 | Modelo, prueba 2016–2022 (183 cuencas, mismos días) | NSE mediano | KGE mediano | Cuencas con NSE < 0 |
 |---|---|---|---|
@@ -933,6 +937,60 @@ Diferencias por cuenca (A − B):
 - Ouyang et al. (2021), embalses: https://arxiv.org/abs/2101.04423
 - Google, modelos de Flood Hub: https://sites.research.google/gr/floodforecasting/our-models/
 
+## 24. Etapa 2: cuencas no vistas (27 y 28/11; notebook, secciones 7, 8 y 10)
+
+**Qué se hizo.** Se entrenó por primera vez el flujo espacial, que estaba implementado desde el 11/11 pero nunca se había corrido. El plan está en `docs/plan-accion-cuencas-sin-estacion.md`.
+
+- **Diseño, fijado antes de ver resultados:**
+  - las 5 particiones de 19 cuencas por sistema de ríos (sección 5);
+  - el protocolo C1 de la sección 21: 3 épocas fijas, sin parada temprana;
+  - semillas 42, 43 y 44 en ensamble;
+  - la referencia de cuenca vista es la corrida C1 (o C2) de cada semilla, en las mismas 62 cuencas y días de 2016–2022.
+- **Código nuevo en `src/`:**
+  - `flujo_espacial.py`: entrena y evalúa. Variantes `base`, `era5l` y `transformer`; salta las corridas ya evaluadas.
+  - `baselines_espacial.py`: tres referencias por partición.
+  - `resultados_espacial.py`: métricas en los mismos días, Wilcoxon, por región y por partición.
+  - `figuras_espacial.py`: CDF, mapa e hidrogramas.
+- **Tres referencias**, cada una con solo las cuencas de entrenamiento de su partición:
+  - climatología de 5 donantes por similitud de atributos;
+  - vecino más cercano con caudal observado;
+  - LightGBM regional con las 83 variables de la sección 8.3.
+- **Error corregido:** `gauge_lat` y `gauge_lon` están en metros de World Mercator (EPSG:3395), no en grados. Se convierten con `mercator_a_grados`. El vecino queda a 44 km en mediana; leídas como grados, saldría a 653 km.
+- **Datos:** la base de ERA5-Land (`data/processed_era5land`) la pasó Diego el 27/11 y se validó: 248 cuencas, 1981–2022.
+- **Tiempo de entrenamiento** (RTX 3050): 33 min por corrida en la variante base y 42 min en la de ERA5-Land. El Transformer va a unos 85 min por corrida.
+- **Incidente:** el 27/11 a las 20:05, el temporizador `apagado-nocturno` apagó el equipo a mitad de una corrida de ERA5-Land. Se reanudó a las 22:38 y el script saltó las corridas ya hechas.
+
+**Resultados en las 95 cuencas no vistas, 1981–2022** (medianas; NSE = R² por cuenca):
+
+| Modelo | NSE | KGE | Cuencas con NSE < 0 | Cuencas con NSE ≥ 0,5 |
+|---|---|---|---|---|
+| LSTM base, ensamble de 3 semillas | 0,276 | 0,438 | 22 | 24 |
+| **LSTM con ERA5-Land, ensamble de 3 semillas** | **0,300** | **0,453** | 21 | 26 |
+| LightGBM regional | 0,257 | 0,445 | 25 | 24 |
+| Promedio LSTM base + LightGBM | 0,276 | 0,436 | 19 | 27 |
+| Vecino más cercano (caudal observado) | −0,426 | 0,231 | 65 | 14 |
+| Climatología de 5 donantes | −0,081 | −0,058 | 56 | 11 |
+| Meta de la propuesta | 0,50 | — | — | — |
+
+- **El LSTM sirve para cuencas sin estación.** El base supera a la climatología de donantes en 79 de 95 cuencas y al vecino en 83, con p ≈ 0 en las dos.
+- **No llega a la meta de 0,50:** solo una de cada cuatro cuencas la alcanza.
+- **Frente a LightGBM, empate** (51 de 95, p = 1,0).
+- **Costo de no tener estación** (62 cuencas, 2016–2022): de 0,425 a 0,248 en la variante base y de 0,480 a 0,242 con ERA5-Land. En las dos se pierde lo mismo en mediana por cuenca (−0,14).
+- **ERA5-Land frente a base:** 0,300 frente a 0,276, con 54 de 95 cuencas mejorando, pero p = 0,08: es una tendencia. Con dos semillas daba 0,248, arrastrado por la semilla 43 (0,207). El ensamble es necesario.
+- **Por región (base / ERA5-Land):** Orinoco 0,64 / 0,72; Caribe 0,26 / 0,29; Amazonía 0,23 / 0,29; Pacífico 0,15 / 0,16; Magdalena-Cauca −0,03 / −0,51 (solo 6 cuencas). En el Pacífico, LightGBM es mejor (0,36).
+- **Errores:**
+  - el modelo suaviza las crecientes: FHV −28 % y α = 0,67;
+  - el volumen sale bien: β = 0,97;
+  - las 22 cuencas con NSE < 0 están en Córdoba (cuenca del Sinú, 6), en el suroccidente (Nariño, Cauca y Putumayo, 7) y en la Sierra Nevada (4). Son más pequeñas que el resto (870 km² de área mediana, frente a 1420).
+
+**Decisiones.**
+- **El modelo final sigue siendo el LSTM con ERA5-Land.** Se eligió en la etapa 1 (sección 22) y la etapa 2 no lo contradice.
+- El promedio con LightGBM no se elige: su ventaja (59 de 95 cuencas, p = 0,003) se observó mirando las cuencas retenidas, y la mediana casi no cambia.
+
+**En curso (28/11):**
+- el Transformer de NeuralHydrology con las entradas de ERA5-Land, semilla 42, 5 particiones (mejora B3 del plan);
+- el despliegue en el visor Caudal-COL de Sebastián (plan, fase C).
+
 ---
 
 ## Registro de corridas
@@ -950,6 +1008,10 @@ Diferencias por cuenca (A − B):
 | `confirmacion_era5l_s{42,43,44}_*` | Confirmación, con ERA5-Land (C2), 3 semillas | 3 fijas | 0,432 en ensamble (validación 0,491) |
 | `prueba_final_1911` | LightGBM con ERA5-Land, 3 semillas, y promedio final con C2 (sección 22) | 800 árboles fijos | 0,417 / **0,437** |
 | (sin carpeta: script aparte) | Piloto de ERA5 con LightGBM, 30 cuencas, 2001–2010 | 500 árboles por bloque | 0,490 / 0,493 / 0,378 |
+| `espacial_p{1..5}_s{42,43,44}_*` | Etapa 2, variante base, 15 corridas (sección 24) | 3 fijas | 0,276 en ensamble (95 cuencas no vistas, 1981–2022) |
+| `espacial_era5l_p{1..5}_s{42,43,44}_*` | Etapa 2 con ERA5-Land, 15 corridas (sección 24) | 3 fijas | 0,300 en ensamble |
+| `espacial_transformer_p{1..5}_s42_*` | Etapa 2, Transformer con las entradas de ERA5-Land (sección 24) | 3 fijas | en curso |
+| `runs/flujo_espacial/baselines.parquet` | Referencias de la etapa 2: donantes, vecino y LightGBM (sección 24) | — | −0,081 / −0,426 / 0,257 |
 
 ---
 

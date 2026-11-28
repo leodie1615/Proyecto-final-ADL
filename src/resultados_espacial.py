@@ -37,6 +37,11 @@ METRICAS_NH = ["NSE", "KGE", "RMSE", "FHV", "FLV", "FMS"]
 MIN_DIAS = 365
 SEMILLAS = [42, 43, 44]
 INICIO_TEST, FIN_TEST = "2016-01-01", "2022-12-31"
+PRINCIPAL = "LSTM regional (ensamble)"   # nombre del modelo de la variante en las tablas
+# Modelos de otras variantes que se agregan como referencia: nombre → (variante, columna de su series_espacial)
+REFERENCIAS = {"era5l": {"LSTM regional base (forzantes CAMELS-COL)": ("base", "sim_lstm")},
+               "transformer": {"LSTM ERA5-Land, semilla 42": ("era5l", "sim_lstm_s42"),
+                               "LSTM ERA5-Land (ensamble)": ("era5l", "sim_lstm")}}
 
 
 def leer_test(run_dir):
@@ -95,6 +100,8 @@ def comparar(nombre, a, b, metrica="NSE"):
 
 
 def main(variante="base"):
+    global PRINCIPAL
+    PRINCIPAL = "Transformer regional" if variante == "transformer" else "LSTM regional (ensamble)"
     pref = prefijo(variante)
     salida = DIR if variante == "base" else DIR / variante
     docs = "flujo-espacial" if variante == "base" else f"flujo-espacial-{variante}"
@@ -113,10 +120,12 @@ def main(variante="base"):
     sem_t = [s for s in semillas if evaluada(corrida(f"confirmacion_{variante}_s{s}"))]
     vista = ensamble([leer_test(corrida(f"confirmacion_{variante}_s{s}")) for s in sem_t]) if sem_t else {}
     # Variante distinta de base: el LSTM base (ensamble) como referencia directa
-    lstm_base = None
-    if variante != "base":
-        lstm_base = pd.read_parquet(DIR / "series_espacial.parquet", columns=["gauge_id", "date", "sim_lstm"])
-        lstm_base = {str(g): d.set_index("date")["sim_lstm"] for g, d in lstm_base.groupby("gauge_id")}
+    # Variante distinta de base: modelos de otras variantes como referencia directa (REFERENCIAS)
+    otras = {}
+    for nombre, (var, col) in REFERENCIAS.get(variante, {}).items():
+        d = pd.read_parquet((DIR if var == "base" else DIR / var) / "series_espacial.parquet",
+                            columns=["gauge_id", "date", col])
+        otras[nombre] = {str(g): x.set_index("date")[col] for g, x in d.groupby("gauge_id")}
 
     base = pd.read_parquet(DIR / "baselines.parquet")
     base["gauge_id"] = base["gauge_id"].astype(str)
@@ -132,19 +141,19 @@ def main(variante="base"):
             df[f"sim_lstm_s{s}"] = por_semilla[s][g]["sim"].reindex(df.index)
         df["promedio_lstm_lgbm"] = (df["sim_lstm"] + df["lgbm"]) / 2
         df["sim_vista"] = vista[g]["sim"].reindex(df.index) if g in vista else np.nan
-        if lstm_base is not None:
-            df["sim_lstm_base"] = lstm_base[g].reindex(df.index)
+        for i, nombre in enumerate(otras):
+            df[f"sim_ref{i}"] = otras[nombre][g].reindex(df.index)
         # mismo caudal observado en ambas fuentes; rtol 1e-4 por el redondeo float32 de NeuralHydrology (~1e-5)
         assert np.allclose(df["obs"].dropna(), lstm[g]["obs"].reindex(df.index)[df["obs"].notna()],
                            rtol=1e-4, equal_nan=True)
         series[g] = df
     pd.concat(series, names=["gauge_id"]).reset_index().to_parquet(salida / "series_espacial.parquet", index=False)
 
-    modelos = {"LSTM regional (ensamble)": "sim_lstm", **{f"LSTM, semilla {s}": f"sim_lstm_s{s}" for s in semillas},
+    modelos = {PRINCIPAL: "sim_lstm", **{f"LSTM, semilla {s}": f"sim_lstm_s{s}" for s in semillas},
                "LightGBM regional": "lgbm", "Promedio LSTM + LightGBM": "promedio_lstm_lgbm",
                "Vecino más cercano (caudal observado)": "vecino", "Climatología de 5 donantes": "clim_donantes"}
-    if lstm_base is not None:
-        modelos["LSTM regional base (forzantes CAMELS-COL)"] = "sim_lstm_base"
+    for i, nombre in enumerate(otras):
+        modelos[nombre] = f"sim_ref{i}"
     tablas = {(m, "1981–2022"): tabla_metricas(series, c) for m, c in modelos.items()}
     tablas.update({(m, "2016–2022"): tabla_metricas(series, c, INICIO_TEST, FIN_TEST)
                    for m, c in modelos.items() if "semilla" not in m})
@@ -152,32 +161,31 @@ def main(variante="base"):
     # Mismas cuencas y días de 2016–2022 con el modelo que vio el caudal: también deben tener sim_vista
     con_vista = {g: df.assign(sim_lstm=df["sim_lstm"].where(df["sim_vista"].notna())) for g, df in series.items()}
     tablas[(f"LSTM que vio el caudal (C1, {variante})", "2016–2022, cuencas con ambos")] = tabla_metricas(con_vista, "sim_vista", INICIO_TEST, FIN_TEST)
-    tablas[("LSTM regional (ensamble)", "2016–2022, cuencas con ambos")] = tabla_metricas(con_vista, "sim_lstm", INICIO_TEST, FIN_TEST)
+    tablas[(PRINCIPAL, "2016–2022, cuencas con ambos")] = tabla_metricas(con_vista, "sim_lstm", INICIO_TEST, FIN_TEST)
 
     resumen = pd.DataFrame({k: resumir(t) for k, t in tablas.items() if len(t)}).T.rename_axis(["modelo", "período"])
     for c in ["cuencas", "NSE < 0", "NSE ≥ 0,5", "NSE ≥ 0,7"]:
         resumen[c] = resumen[c].astype(int)
 
-    L = tablas[("LSTM regional (ensamble)", "1981–2022")]
+    L = tablas[(PRINCIPAL, "1981–2022")]
     comparaciones = [comparar("LSTM − climatología de donantes", tablas[("Climatología de 5 donantes", "1981–2022")], L),
                      comparar("LSTM − vecino más cercano", tablas[("Vecino más cercano (caudal observado)", "1981–2022")], L),
                      comparar("LSTM − LightGBM", tablas[("LightGBM regional", "1981–2022")], L),
                      comparar("Promedio − LSTM", L, tablas[("Promedio LSTM + LightGBM", "1981–2022")]),
                      comparar("LSTM − vecino más cercano (KGE)", tablas[("Vecino más cercano (caudal observado)", "1981–2022")], L, "KGE"),
                      comparar("LSTM − LightGBM (KGE)", tablas[("LightGBM regional", "1981–2022")], L, "KGE")]
-    if lstm_base is not None:
-        B = tablas[("LSTM regional base (forzantes CAMELS-COL)", "1981–2022")]
-        comparaciones += [comparar(f"LSTM {variante} − LSTM base", B, L),
-                          comparar(f"LSTM {variante} − LSTM base (KGE)", B, L, "KGE")]
+    for nombre in otras:
+        B = tablas[(nombre, "1981–2022")]
+        comparaciones += [comparar(f"{variante} − {nombre}", B, L), comparar(f"{variante} − {nombre} (KGE)", B, L, "KGE")]
     if len(tablas[(f"LSTM que vio el caudal (C1, {variante})", "2016–2022, cuencas con ambos")]):
         comparaciones.append(comparar("No vista − vista (2016–2022)",
                                       tablas[(f"LSTM que vio el caudal (C1, {variante})", "2016–2022, cuencas con ambos")],
-                                      tablas[("LSTM regional (ensamble)", "2016–2022, cuencas con ambos")]))
+                                      tablas[(PRINCIPAL, "2016–2022, cuencas con ambos")]))
     comparaciones = pd.DataFrame(comparaciones)
 
     region = aux["region"]
     por_region = pd.DataFrame({m: tablas[(m, "1981–2022")]["NSE"].groupby(region).median()
-                               for m in ["LSTM regional (ensamble)", "LightGBM regional",
+                               for m in [PRINCIPAL, "LightGBM regional",
                                          "Vecino más cercano (caudal observado)", "Climatología de 5 donantes"]})
     por_region.insert(0, "cuencas", L.groupby(region).size())
     particion = base.drop_duplicates("gauge_id").set_index("gauge_id")["particion"]

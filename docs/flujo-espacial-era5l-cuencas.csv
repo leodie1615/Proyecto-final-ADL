@@ -1,4 +1,4 @@
-gauge_id,region,particion,area_km2,lat,lon,NSE_sim_lstm,NSE_lgbm,NSE_promedio_lstm_lgbm,NSE_vecino,NSE_clim_donantes,NSE_sim_lstm_base,KGE_sim_lstm,FHV_sim_lstm,beta_sim_lstm,dias
+gauge_id,region,particion,area_km2,lat,lon,NSE_sim_lstm,NSE_lgbm,NSE_promedio_lstm_lgbm,NSE_vecino,NSE_clim_donantes,NSE_sim_ref0,KGE_sim_lstm,FHV_sim_lstm,beta_sim_lstm,dias
 11027010,Caribbean,2,205.01,5.852,-76.1808,0.2097,0.2139,0.2431,-0.4552,-0.5748,0.2755,0.5381,-23.7691,1.0746,5588
 11027030,Caribbean,2,195.54,5.862,-76.1521,-0.131,-0.0523,-0.0536,-0.5918,-0.3448,0.0194,0.4516,-8.5201,1.2182,12161
 11035020,Caribbean,2,1567.79,5.6281,-76.7423,0.2646,0.2228,0.2624,-1.6642,-1.0091,0.249,0.2746,-36.0148,1.0303,4617

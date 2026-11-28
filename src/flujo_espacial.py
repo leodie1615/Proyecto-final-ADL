@@ -4,11 +4,14 @@ Uso, desde la raíz del repositorio:
     python src/flujo_espacial.py entrenar --semillas 42 43 44
     python src/flujo_espacial.py estado
     python src/flujo_espacial.py entrenar --variante era5l --semillas 42 43 44   # mejora B1 del plan
+    python src/flujo_espacial.py entrenar --variante transformer --semillas 42 --sin-temporal   # B3
 
 Variantes (`--variante`):
 - `base`: forzantes de CAMELS-COL (`configs/base.yml`, `data/processed`). Corridas `espacial_p{k}_s{semilla}`.
 - `era5l`: la configuración C2 de la etapa 1 (`configs/corridas/confirmacion_era5l_s*.yml`: 4 forzantes de CAMELS-COL
   más 15 de ERA5-Land y 47 atributos, `data/processed_era5land`). Corridas `espacial_era5l_p{k}_s{semilla}`.
+- `transformer`: las mismas entradas, datos, particiones, épocas, pérdida y lote que `era5l`; solo cambia la
+  arquitectura (`TRANSFORMER`). Es la comparación B3 del plan, en igualdad de condiciones con el LSTM.
 
 Diseño (fijado antes de ver resultados; notebook de modelado, secciones 3, 4 y 7):
 - Partición k: entrena con las cuencas fuera de la partición (1981–2010) y simula las retenidas en todo su
@@ -37,14 +40,30 @@ DIR_REGISTRO = DIR_CORRIDAS / "flujo_espacial"
 N_PARTICIONES = 5
 EPOCAS = 3
 REGISTRO_COMPLETO = ("01/01/1981", "31/12/2022")
-VARIANTES = ("base", "era5l")
+VARIANTES = ("base", "era5l", "transformer")
+# Transformer de NeuralHydrology, fijado antes de ver resultados. Las entradas pasan por una capa de embedding
+# (64 dinámicas + 64 estáticas = 128, divisible por 4 cabezas); 2 capas de codificador, como en los ejemplos de
+# NeuralHydrology y Liu et al. (2025). Tasa de aprendizaje 1e-4: sin calentamiento, 5e-4 suele desestabilizar
+# la atención. La capa de salida conserva el dropout de 0,4 del LSTM.
+TRANSFORMER = {"model": "transformer", "transformer_nlayers": 2, "transformer_nheads": 4,
+               "transformer_dim_feedforward": 256, "transformer_dropout": 0.1,
+               "transformer_positional_encoding_type": "sum", "transformer_positional_dropout": 0.0,
+               "dynamics_embedding": {"type": "fc", "hiddens": [64], "activation": "tanh", "dropout": 0.0},
+               "statics_embedding": {"type": "fc", "hiddens": [64], "activation": "tanh", "dropout": 0.0},
+               "learning_rate": 0.0001}
 
 
 def config_base(variante: str = "base", semilla: int = 42) -> dict:
-    """Configuración de partida: `configs/base.yml` (base) o la C2 de la etapa 1 de esa semilla (era5l)."""
+    """Configuración de partida: `configs/base.yml` (base), la C2 de la etapa 1 de esa semilla (era5l) o la C2 con
+    el Transformer en lugar del LSTM (transformer)."""
     if variante == "base":
         return yaml.safe_load((ROOT / "configs" / "base.yml").read_text(encoding="utf-8"))
-    return yaml.safe_load((DIR_CONFIGS / f"confirmacion_era5l_s{semilla}.yml").read_text(encoding="utf-8"))
+    c = yaml.safe_load((DIR_CONFIGS / f"confirmacion_era5l_s{semilla}.yml").read_text(encoding="utf-8"))
+    if variante == "transformer":
+        for k in ("hidden_size", "initial_forget_bias"):
+            c.pop(k, None)
+        c.update(TRANSFORMER)
+    return c
 
 
 def prefijo(variante: str) -> str:
