@@ -44,7 +44,8 @@ REFERENCIAS = {"era5l": {"LSTM regional base (forzantes CAMELS-COL)": ("base", "
                                "LSTM ERA5-Land (ensamble)": ("era5l", "sim_lstm")}}
 
 
-def leer_test(run_dir):
+def leer_test(run_dir: Path) -> dict[str, pd.DataFrame]:
+    """Observado y simulado (recortado en 0) de cada cuenca en la evaluación de prueba de la última época."""
     with open(run_dir / "test" / f"model_epoch{EPOCAS:03d}" / "test_results.p", "rb") as f:
         res = pickle.load(f)
     salida = {}
@@ -55,13 +56,14 @@ def leer_test(run_dir):
     return salida
 
 
-def ensamble(lista_series):
+def ensamble(lista_series: list[dict[str, pd.DataFrame]]) -> dict[str, pd.DataFrame]:
     """Promedio de las simulaciones de varias semillas (mismos días por construcción)."""
     base = lista_series[0]
     return {g: base[g].assign(sim=np.mean([s[g]["sim"].to_numpy() for s in lista_series], axis=0)) for g in base}
 
 
-def metricas_serie(obs, sim):
+def metricas_serie(obs: np.ndarray, sim: np.ndarray) -> dict | None:
+    """Métricas de una cuenca en los días con los dos valores; None si son menos de MIN_DIAS."""
     m = np.isfinite(obs) & np.isfinite(sim)
     if m.sum() < MIN_DIAS:
         return None
@@ -74,7 +76,9 @@ def metricas_serie(obs, sim):
     return fila
 
 
-def tabla_metricas(series, columna, desde=None, hasta=None):
+def tabla_metricas(series: dict[str, pd.DataFrame], columna: str, desde: str | None = None,
+                   hasta: str | None = None) -> pd.DataFrame:
+    """Métricas por cuenca de un modelo, en los mismos días que el LSTM."""
     filas = {}
     for g, df in series.items():
         df = df.loc[desde:hasta]
@@ -85,13 +89,14 @@ def tabla_metricas(series, columna, desde=None, hasta=None):
     return pd.DataFrame.from_dict(filas, orient="index").rename_axis("gauge_id")
 
 
-def resumir(t):
+def resumir(t: pd.DataFrame) -> pd.Series:
+    """Medianas entre cuencas y conteos de cuencas por rango de NSE."""
     return pd.Series({"cuencas": len(t), **t[["NSE", "KGE", "RMSE", "MAE", "FHV", "FLV", "r", "alpha", "beta"]].median(),
                       "NSE < 0": int((t["NSE"] < 0).sum()), "NSE ≥ 0,5": int((t["NSE"] >= 0.5).sum()),
                       "NSE ≥ 0,7": int((t["NSE"] >= 0.7).sum())})
 
 
-def comparar(nombre, a, b, metrica="NSE"):
+def comparar(nombre: str, a: pd.DataFrame, b: pd.DataFrame, metrica: str = "NSE") -> dict:
     """b − a por cuenca (a es la referencia)."""
     d = (b[metrica] - a[metrica]).dropna()
     return {"comparación": nombre, "métrica": metrica, "cuencas": len(d), "referencia": a.loc[d.index, metrica].median(),
@@ -99,7 +104,8 @@ def comparar(nombre, a, b, metrica="NSE"):
             "cuencas que mejoran": int((d > 0).sum()), "p (Wilcoxon)": wilcoxon(d).pvalue if (d != 0).any() else np.nan}
 
 
-def main(variante="base"):
+def main(variante: str = "base") -> None:
+    """Calcula y guarda las tablas de la variante e imprime el resumen."""
     global PRINCIPAL
     PRINCIPAL = "Transformer regional" if variante == "transformer" else "LSTM regional (ensamble)"
     pref = prefijo(variante)

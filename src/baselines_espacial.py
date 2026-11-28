@@ -38,7 +38,7 @@ VENTANAS_LLUVIA = [2, 3, 5, 7, 15, 30, 60, 90, 180, 365]
 VIDAS_MEDIAS = [5, 20, 60, 180]
 
 
-def variables_lgbm(df):
+def variables_lgbm(df: pd.DataFrame) -> pd.DataFrame:
     """Copia de `variables_lgbm` del notebook (6.2): solo forzantes del día y de los anteriores."""
     p, e, tn, tx = df["pr"], df["poten_evapo"], df["t_min"], df["t_max"]
     media = lambda s, w: s.rolling(w, min_periods=max(1, w // 2)).mean()
@@ -55,17 +55,19 @@ def variables_lgbm(df):
     return pd.DataFrame(x, index=df.index)
 
 
-def climatologia(q):
+def climatologia(q: pd.Series) -> pd.Series:
+    """Caudal medio de cada día del año, suavizado con una media móvil circular de 31 días."""
     media = q.groupby(q.index.strftime("%m-%d")).mean().reindex(DIAS_DEL_ANIO)
     circular = pd.concat([media.iloc[-15:], media, media.iloc[:15]])
     return circular.rolling(31, center=True, min_periods=1).mean().iloc[15:-15]
 
 
-def lista(nombre):
+def lista(nombre: str) -> list[str]:
+    """Códigos de cuenca de un archivo de `configs/basins/`."""
     return [l for l in (DIR_CUENCAS / nombre).read_text().split() if l]
 
 
-def mercator_a_grados(y, x):
+def mercator_a_grados(y: pd.Series, x: pd.Series) -> tuple[pd.Series, pd.Series]:
     """`gauge_lat` y `gauge_lon` de CAMELS-COL no son grados: son metros de World Mercator elipsoidal (EPSG:3395),
     el mismo sistema del shapefile (bitácora, sección 9). Inversa elipsoidal (WGS 84), por iteración."""
     a, e = 6378137.0, 0.0818191908426215
@@ -77,13 +79,15 @@ def mercator_a_grados(y, x):
     return np.degrees(lat), lon
 
 
-def distancia_km(lat1, lon1, lat2, lon2):
+def distancia_km(lat1: np.ndarray, lon1: np.ndarray, lat2: np.ndarray, lon2: np.ndarray) -> np.ndarray:
+    """Distancia de haversine en km, con un radio de 6371 km."""
     lat1, lon1, lat2, lon2 = map(np.radians, (lat1, lon1, lat2, lon2))
     a = np.sin((lat2 - lat1) / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin((lon2 - lon1) / 2) ** 2
     return 2 * 6371 * np.arcsin(np.sqrt(a))
 
 
-def main():
+def main() -> None:
+    """Calcula las tres referencias de cada partición y las guarda en `runs/flujo_espacial/baselines.parquet`."""
     atributos = pd.read_csv(DIR_BASE / "attributes" / "atributos_modelo.csv", dtype={"gauge_id": str},
                             index_col="gauge_id")
     aux = pd.read_csv(DIR_BASE / "atributos.csv", dtype={"gauge_id": str}, index_col="gauge_id")
@@ -113,7 +117,8 @@ def main():
         assert not set(prueba) & set(entrenamiento)
 
         # LightGBM con las cuencas de entrenamiento (1981–2010, días alternos), parada con su validación 2011–2015
-        def datos(conjunto, referencia=None):
+        def datos(conjunto: str, referencia: lgb.Dataset | None = None) -> lgb.Dataset:
+            """Dataset de LightGBM con las cuencas de entrenamiento: días alternos de 1981–2010 o la validación."""
             xs, ys, ws = [], [], []
             for g in entrenamiento:
                 p, q = periodo[g], y[g]

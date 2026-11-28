@@ -126,6 +126,7 @@ def residuos(series: pd.DataFrame, cuencas: pd.DataFrame, sistema: pd.Series, co
 
 
 def main(variante: str = "era5l") -> None:
+    """Calcula y guarda las tablas de crecientes y de residuos de la variante."""
     sufijo = "" if variante == "base" else f"-{variante}"
     directorio = DIR if variante == "base" else DIR / variante
     series = pd.read_parquet(directorio / "series_espacial.parquet")

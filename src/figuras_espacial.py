@@ -27,7 +27,8 @@ plt.rcParams.update({"font.size": 9, "axes.edgecolor": TEXTO2, "axes.labelcolor"
                      "axes.grid": True, "grid.color": REJILLA, "grid.linewidth": 0.6, "savefig.dpi": 300})
 
 
-def cdf(cuencas, sufijo="", variante="base"):
+def cdf(cuencas: pd.DataFrame, sufijo: str = "", variante: str = "base") -> None:
+    """Distribución acumulada del NSE por cuenca de cada modelo, con la meta de 0,50."""
     fig, ax = plt.subplots(figsize=(4.2, 3.4))
     colores = dict(COLORES)
     if "NSE_sim_ref0" in cuencas:          # el primer modelo de referencia de otra variante
@@ -47,7 +48,8 @@ def cdf(cuencas, sufijo="", variante="base"):
     fig.savefig(FIG / f"espacial{sufijo}-cdf-nse.png", bbox_inches="tight")
 
 
-def nombre(c, variante):
+def nombre(c: str, variante: str) -> str:
+    """Nombre del modelo de la columna `c` para la leyenda."""
     if c == "sim_ref0":
         return {"era5l": "LSTM base", "transformer": "LSTM ERA5-Land, s42"}.get(variante, "Referencia")
     if c == "sim_lstm" and variante == "transformer":
@@ -55,11 +57,13 @@ def nombre(c, variante):
     return f"LSTM {ETIQUETAS.get(variante, variante)}" if c == "sim_lstm" and variante != "base" else NOMBRES[c]
 
 
-def titulo(variante):
+def titulo(variante: str) -> str:
+    """Sufijo del título según la variante (vacío en la base)."""
     return "" if variante == "base" else f", {ETIQUETAS.get(variante, variante)}"
 
 
-def mapa(cuencas, sufijo="", variante="base"):
+def mapa(cuencas: pd.DataFrame, sufijo: str = "", variante: str = "base") -> None:
+    """Mapa del NSE del modelo en cada cuenca no vista; las de NSE < 0 con una ×."""
     fig, ax = plt.subplots(figsize=(3.5, 3.6))
     v = cuencas["NSE_sim_lstm"]
     neg = v < 0
@@ -75,7 +79,7 @@ def mapa(cuencas, sufijo="", variante="base"):
     fig.savefig(FIG / f"espacial{sufijo}-mapa-nse.png")
 
 
-def hidrogramas(series, cuencas, sufijo="", variante="base"):
+def hidrogramas(series: pd.DataFrame, cuencas: pd.DataFrame, sufijo: str = "", variante: str = "base") -> None:
     """Tres cuencas: la del percentil 75, la mediana y la del percentil 25 del NSE del LSTM, en su año más completo."""
     orden = cuencas["NSE_sim_lstm"].dropna().sort_values()
     elegidas = [orden.index[int(q * (len(orden) - 1))] for q in (0.75, 0.5, 0.25)]
@@ -96,7 +100,8 @@ def hidrogramas(series, cuencas, sufijo="", variante="base"):
     fig.savefig(FIG / f"espacial{sufijo}-hidrogramas.png")
 
 
-def main(variante="base"):
+def main(variante: str = "base") -> None:
+    """Lee los resultados de la variante y escribe sus tres figuras en `docs/figuras/`."""
     FIG.mkdir(parents=True, exist_ok=True)
     sufijo = "" if variante == "base" else f"-{variante}"
     dir_series = ROOT / "runs" / "flujo_espacial" / ("" if variante == "base" else variante)

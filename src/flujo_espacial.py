@@ -24,6 +24,7 @@ Diseño (fijado antes de ver resultados; notebook de modelado, secciones 3, 4 y 
   ejecutar se saltan las corridas que ya tienen su evaluación.
 """
 import argparse
+from collections.abc import Iterator
 import subprocess
 import sys
 import time
@@ -71,7 +72,7 @@ def prefijo(variante: str) -> str:
     return "espacial" if variante == "base" else f"espacial_{variante}"
 
 
-def protocolo_c1(c, semilla):
+def protocolo_c1(c: dict, semilla: int) -> dict:
     """El protocolo de la confirmación C1 (sección 6.6): 3 épocas fijas, sin parada temprana."""
     c = {**c, "seed": semilla, "epochs": EPOCAS, "early_stopping": False, "save_validation_results": False,
          "verbose": 0}
@@ -81,7 +82,8 @@ def protocolo_c1(c, semilla):
     return c
 
 
-def lista(nombre):
+def lista(nombre: str) -> list[str]:
+    """Códigos de cuenca de un archivo de `configs/basins/`."""
     return [l for l in (DIR_CUENCAS / nombre).read_text().split() if l]
 
 
@@ -107,18 +109,20 @@ def config_temporal(semilla: int, variante: str = "base") -> dict:
     return c
 
 
-def corrida(nombre):
+def corrida(nombre: str) -> Path | None:
     """Carpeta más reciente de la corrida `nombre` que ya tiene los pesos de la última época, o None."""
     hechas = sorted(p for p in DIR_CORRIDAS.glob(f"{nombre}_*")
                     if p.name[len(nombre) + 1:].replace("_", "").isdigit() and (p / f"model_epoch{EPOCAS:03d}.pt").exists())
     return hechas[-1] if hechas else None
 
 
-def evaluada(run_dir):
+def evaluada(run_dir: Path | None) -> bool:
+    """True si la corrida ya tiene su evaluación de prueba de la última época."""
     return run_dir is not None and (run_dir / "test" / f"model_epoch{EPOCAS:03d}" / "test_results.p").exists()
 
 
-def ejecutar(args, log):
+def ejecutar(args: list[str], log: Path) -> None:
+    """Corre `nh_run` con esos argumentos en un proceso aparte y agrega su salida al log."""
     with open(log, "a", encoding="utf-8") as f:
         f.write(f"\n===== {datetime.now():%Y-%m-%d %H:%M:%S} {' '.join(args)}\n")
         f.flush()
@@ -126,7 +130,8 @@ def ejecutar(args, log):
                        stdout=f, stderr=subprocess.STDOUT, cwd=ROOT, check=True)
 
 
-def entrenar_y_evaluar(config):
+def entrenar_y_evaluar(config: dict) -> Path:
+    """Entrena (si hace falta) y evalúa una corrida; salta las ya evaluadas y anota el tiempo en progreso.log."""
     nombre = config["experiment_name"]
     run_dir = corrida(nombre)
     if evaluada(run_dir):
@@ -154,7 +159,7 @@ def entrenar_y_evaluar(config):
     return run_dir
 
 
-def plan(semillas: list[int], con_temporal: bool = True, variante: str = "base"):
+def plan(semillas: list[int], con_temporal: bool = True, variante: str = "base") -> Iterator[dict]:
     """Orden: por semilla, las 5 particiones y luego la referencia temporal, para que si la noche se corta queden
     semillas completas."""
     for s in semillas:
@@ -164,7 +169,8 @@ def plan(semillas: list[int], con_temporal: bool = True, variante: str = "base")
             yield config_temporal(s, variante)
 
 
-def main():
+def main() -> None:
+    """Línea de comandos: `entrenar` o `estado`, por variante y semillas."""
     p = argparse.ArgumentParser()
     p.add_argument("accion", choices=["entrenar", "estado"])
     p.add_argument("--semillas", type=int, nargs="+", default=[42, 43, 44])
