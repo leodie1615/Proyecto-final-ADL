@@ -151,7 +151,24 @@ Regla de decisión, igual que en la etapa 1: **cada mejora se elige con la valid
 
 ### Fase C: despliegue para el usuario final (25 % de la nota)
 
-La rúbrica del despliegue (sección 10) pesa por igual **funcionalidad** (recibe entradas, usa el modelo entrenado y entrega resultados sin errores) e **interfaz para el usuario final** (su lenguaje, resultados comprensibles y **auto contenida**: se usa sin explicación del equipo). La demo de la presentación vale además el 20 % de esa nota y pide **casos realistas**. Por eso se elige lo que funciona seguro, y no la versión más ambiciosa. El 28/11, `03-codigo/visor` solo tiene un video y una imagen: no hay código que reusar.
+La rúbrica del despliegue (sección 10) pesa por igual **funcionalidad** (recibe entradas, usa el modelo entrenado y entrega resultados sin errores) e **interfaz para el usuario final** (su lenguaje, resultados comprensibles y **auto contenida**: se usa sin explicación del equipo). La demo de la presentación vale además el 20 % de esa nota y pide **casos realistas**. Por eso se elige lo que funciona seguro, y no la versión más ambiciosa.
+
+**Actualización 28/11: Sebastián ya tiene el visor "Caudal-COL" listo, pero no está en ningún repositorio.** Por el video del 17/11 (`03-codigo/visor/demo-visor-2026-11-17.mp4`), es una página web estática (`app_caudal_col/index.html`) con cuatro pestañas:
+- **Mapa y cuenca:** filtros de región, cuenca, modelo y período; mapa de polígonos coloreado por región o por NSE; tarjetas de NSE, KGE, recall de crecientes y mejora frente a la línea base; hidrograma en m³/s o mm/día con lluvia y umbral de creciente; calidad del registro y aviso de confianza; descarga en CSV.
+- **Comparar modelos:** tabla, CDF del NSE y NSE por región.
+- **Calidad de datos:** banderas y cobertura por cuenca.
+- **Acerca del modelo:** diagrama del LSTM y su configuración.
+
+Ya resuelve casi toda la interfaz que pedía esta fase, y en lenguaje de usuario. **Se usa el visor y no se hace una app de Streamlit nueva.** Lo que le falta:
+1. **Datos del LSTM:** en el video solo muestra la línea base (climatología) y dice "LSTM regional: en entrenamiento". Hay que darle las series y métricas de las etapas 1 y 2.
+2. **"Ver como cuenca no aforada":** el interruptor existe con la etiqueta "pronto". Es justo la etapa 2: la simulación del modelo de la partición que no vio la cuenca (95 cuencas).
+3. **Números viejos:** 187 cuencas en prueba (son 183) y meta 0,70 en todas las tarjetas. La meta de la etapa 2 es 0,50.
+4. **"Usa el modelo entrenado" (50 % del despliegue):** si solo muestra series precalculadas, un evaluador puede decir que no usa el modelo. Hay dos opciones; la primera es la recomendada porque no necesita servidor y la página sigue siendo estática:
+   - **ONNX en el navegador:** exportar el LSTM a ONNX (unos 1,3 MB por modelo) y correrlo con `onnxruntime-web` sobre las forzantes de la cuenca, con un control de **escenario de lluvia** (por ejemplo, −20 % para El Niño). El resultado se compara en el navegador con la serie precalculada, para comprobar que es el mismo modelo.
+   - **API pequeña** (FastAPI en Hugging Face Spaces) que recibe la cuenca y el escenario y devuelve la serie.
+5. **Publicación:** GitHub Pages, Netlify o Hugging Face Spaces, y probarla desde otro equipo.
+
+La imagen `referencia-visor-rio-sinu.jpg` es de otro visor (Relieve 3D del río Sinú, Lab SinergIA) y solo sirvió de referencia visual.
 
 **Usuario final:** un técnico de una corporación autónoma regional, una alcaldía o un operador de acueducto que necesita una estimación del caudal en un río sin estación. No es hidrólogo de modelos: piensa en m³/s, en meses secos y en crecientes.
 
@@ -174,9 +191,10 @@ La rúbrica del despliegue (sección 10) pesa por igual **funcionalidad** (recib
 
 | # | Tarea | Cuándo |
 |---|---|---|
-| C1 | Script que guarda las simulaciones y artefactos que usa la app, y prueba la inferencia en CPU contra `series_espacial.parquet` (mismo resultado) | 29/11 |
-| C2 | `app.py` con las entradas, salidas y textos de arriba | 29/11 – 30/11 |
-| C3 | Publicarla y probarla de punta a punta en un equipo sin el repositorio | 30/11 |
+| C0 | **Que Sebastián suba el visor** a una rama del repositorio del grupo (por ejemplo `visor` en `leodie1615/Proyecto-final-ADL`, carpeta `03-codigo/visor/` o `app/`), con una nota de qué archivos de datos lee y en qué formato | Hoy, 28/11 |
+| C1 | Exportar al formato que lee el visor: series diarias y métricas por cuenca del LSTM de la etapa 1 y de la etapa 2 (cuenca no vista), con las tres referencias; y, si se elige ONNX, los modelos exportados más una prueba de que dan lo mismo que `series_espacial.parquet` | 29/11 |
+| C2 | Conectar los datos al visor: el selector de modelo, el interruptor de cuenca no aforada, la meta de 0,50 en la etapa 2 y el escenario de lluvia. Lo hace Sebastián o nosotros sobre su rama | 29/11 – 30/11 |
+| C3 | Publicarlo y probarlo de punta a punta en un equipo sin el repositorio | 30/11 |
 | C4 | Tres casos realistas para la demo: una cuenca del Orinoco (funciona bien), una del Caribe (media) y un escenario de El Niño | 1/12 |
 
 ### Fase D: artículo y presentación (1/12 a 4/12)
@@ -362,8 +380,8 @@ Fuente: `01-enunciado/entrega-final/entrega-final.md`. La entrega final vale el 
 
 | Criterio (peso) | Estado | Plan |
 |---|---|---|
-| **Funcionalidad (50 %):** recibe entradas, usa el modelo entrenado, entrega resultados sin errores | ❌ | Fase C, tareas C1 a C3. El modelo de cada partición predice la cuenca que no vio; prueba de punta a punta desde otro equipo |
-| **Interfaz para el usuario final (50 %):** lenguaje del contexto, resultados comprensibles, auto contenida | ❌ | Fase C: m³/s y no mm/día, confianza en palabras por región, escenario de El Niño, texto de "qué hace y qué no hace", ayudas en cada control. Nada de "NSE" sin explicar en la pantalla principal |
+| **Funcionalidad (50 %):** recibe entradas, usa el modelo entrenado, entrega resultados sin errores | ⚠️ | El visor de Sebastián ya recibe entradas y entrega resultados, pero solo con la línea base y fuera del repositorio. Fase C, tareas C0 a C3: subirlo, cargarle el LSTM de las dos etapas e inferencia real (ONNX o API) con el escenario de lluvia |
+| **Interfaz para el usuario final (50 %):** lenguaje del contexto, resultados comprensibles, auto contenida | ⚠️ casi | El visor ya habla en m³/s, explica la confianza en palabras y tiene la pestaña "Acerca del modelo". Falta actualizar las metas y los números. Resto del plan original: | Fase C: m³/s y no mm/día, confianza en palabras por región, escenario de El Niño, texto de "qué hace y qué no hace", ayudas en cada control. Nada de "NSE" sin explicar en la pantalla principal |
 
 ### 10.3 Presentación (15 %)
 
