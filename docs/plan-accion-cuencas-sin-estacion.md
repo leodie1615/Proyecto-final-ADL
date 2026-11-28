@@ -1,6 +1,6 @@
 # Plan de acción: ¿cómo predecir el caudal medio diario en Colombia en cuencas sin estación de medición con deep learning?
 
-27/11/2026. Basado en los 67 documentos de `05-referencias/md/` (con su PDF), los 19 repositorios de `05-referencias/repos/`, la bitácora (`docs/bitacora-modelado.md`) y el estado del repositorio. Fechas que mandan: presentación el **2/12 a las 5:30 pm** y artículo el **4/12**.
+27/11/2026, actualizado el 28/11 con la rúbrica de la entrega final (`01-enunciado/entrega-final/entrega-final.md`; sección 10). Basado en los 67 documentos de `05-referencias/md/` (con su PDF), los 19 repositorios de `05-referencias/repos/`, la bitácora (`docs/bitacora-modelado.md`) y el estado del repositorio. Fechas que mandan: presentación el **2/12 a las 5:30 pm** y artículo el **4/12**.
 
 ---
 
@@ -19,7 +19,9 @@
 
 **Lo que el proyecto ya tiene.** Todo lo anterior está implementado: 248 cuencas limpias, 35 sistemas de ríos, 5 particiones de 19 cuencas sin fuga por anidamiento y la regla de no usar caudal como entrada.
 
-**Lo que faltaba (hasta hoy):** **el flujo espacial nunca se había entrenado.** Sin él, el proyecto responde "¿qué tan bien simula años nuevos en cuencas aforadas?" (NSE 0,437), pero no la pregunta del título. **La fase A (abajo) lo resuelve y está corriendo desde el 27/11 a las 07:46.**
+**Lo que faltaba (hasta el 27/11):** **el flujo espacial nunca se había entrenado.** Sin él, el proyecto responde "¿qué tan bien simula años nuevos en cuencas aforadas?" (NSE 0,437), pero no la pregunta del título.
+
+**Respuesta medida (28/11, 3 semillas, 95 cuencas no vistas, 1981–2022):** el LSTM regional logra un **NSE mediano de 0,276** (KGE 0,438). Supera a la climatología de 5 donantes (−0,081; mejor en 79 de 95 cuencas) y al vecino más cercano con caudal observado (−0,426; mejor en 83 de 95), las dos con p ≈ 0. Empata con LightGBM regional (0,257; p = 0,997). No vista frente a vista, en las mismas 62 cuencas de 2016–2022: 0,248 frente a 0,425. Por región: Orinoco 0,64, Caribe 0,26, Amazonía 0,23, Pacífico 0,15, Magdalena-Cauca −0,03. Queda lejos de la meta de 0,50, y ese es el resultado que se reporta (sección 5). ERA5-Land (B1, preliminar con 2 semillas) no mejora la etapa 2: 0,248 frente a 0,276, p = 0,79.
 
 ---
 
@@ -119,10 +121,10 @@ Presupuesto medido el 27/11 en la RTX 3050: **unos 11 minutos por época** con 2
 | # | Tarea | Estado / costo |
 |---|---|---|
 | A1 | Base reconstruida en esta máquina desde `04-datos/` (preprocesamiento, sección 1). Las listas de cuencas y particiones salen **idénticas** a las de git | ✅ Hecho el 27/11 |
-| A2 | `src/flujo_espacial.py`: 5 particiones × semillas 42, 43 y 44, protocolo C1 (3 épocas fijas), más la corrida C1 de cada semilla como referencia de cuenca vista | ⏳ Corriendo desde las 07:46. Unas 10 horas en total |
+| A2 | `src/flujo_espacial.py`: 5 particiones × semillas 42, 43 y 44, protocolo C1 (3 épocas fijas), más la corrida C1 de cada semilla como referencia de cuenca vista | ✅ Terminó el 27/11 a las 18:05 (18 corridas) |
 | A3 | `src/baselines_espacial.py`: climatología de 5 donantes, vecino más cercano y LightGBM regional por partición | ✅ Corregido el 27/11: `gauge_lat` y `gauge_lon` vienen en metros de Mercator (EPSG:3395), no en grados |
-| A4 | `src/resultados_espacial.py`: métricas en los mismos días, medianas, Wilcoxon, por región, por partición y la brecha entre cuenca vista y no vista (2016–2022, mismas cuencas) | Listo; se ejecuta al terminar A2 |
-| A5 | `src/figuras_espacial.py`: distribución acumulada del NSE, mapa y hidrogramas | Listo |
+| A4 | `src/resultados_espacial.py`: métricas en los mismos días, medianas, Wilcoxon, por región, por partición y la brecha entre cuenca vista y no vista (2016–2022, mismas cuencas) | ✅ 27/11 con 3 semillas; acepta `--variante era5l` |
+| A5 | `src/figuras_espacial.py`: distribución acumulada del NSE, mapa y hidrogramas | ✅ 27/11, revisadas |
 | A6 | Llevar todo al notebook (secciones 7, 8 y 10) y agregar la sección 24 a la bitácora. Según `rules.md` (sección 6 de este plan): tabla única del checklist de fuga al inicio de la sección 7, una interpretación de 2–6 líneas después de cada tabla y figura de la sección 10, y el NSE presentado como R² | Celdas de las secciones 7, 8 y 10 listas el 27/11; la interpretación va después de A4 |
 | A7 | Type hints y docstrings en las funciones de `src/*_espacial.py` (`rules.md`, regla 2) | Cuando termine A2, para no tocar `flujo_espacial.py` mientras corre |
 
@@ -136,7 +138,7 @@ Presupuesto medido el 27/11 en la RTX 3050: **unos 11 minutos por época** con 2
 
 | # | Tarea | Por qué (sección 2) | Costo | Condición |
 |---|---|---|---|---|
-| B1 | **Etapa 2 con ERA5-Land (C2)**: 19 forzantes y 47 atributos | Fue lo único que movió el flujo temporal (+0,024). La lluvia de ERA5 corrige donde CHIRPS se queda corta (Atrato, Pacífico), que son justo las regiones retenidas | 3 × 3,6 h | **Los 11 GB de `data/processed_era5land` están en el equipo de Diego.** Opciones: copiar solo `processed_era5land` (unos 400 MB de `.nc`: la base actual, con 5 variables, ocupa 104 MB) o que Diego corra `src/flujo_espacial.py` con `data_dir` cambiado |
+| B1 | **Etapa 2 con ERA5-Land (C2)**: 19 forzantes y 47 atributos | Fue lo único que movió el flujo temporal (+0,024). La lluvia de ERA5 corrige donde CHIRPS se queda corta (Atrato, Pacífico), que son justo las regiones retenidas | 18 corridas de unos 42 min | ⏳ Datos recibidos el 27/11. 14 de 18 corridas el 28/11 a las 8:00; termina hacia las 10:00. Preliminar (2 semillas): 0,248 frente a 0,276 del base, p = 0,79: **no mejora en cuenca no vista**, aunque sí en cuenca vista (0,464 frente a 0,425) |
 | B2 | IDW de 3 a 5 donantes como referencia | Pool 2021; Portugal 2026 | Minutos | Ninguna |
 | B3 | Transformer de NeuralHydrology en la etapa 2, 1 semilla | Lo pidió la profesora; Liu 2025 | Unas 4 a 8 h (medir antes con una época) | Después de A2 |
 | B4 | Agregados de forzantes como atributos: estacionalidad, bimodalidad de la lluvia, fracción de lluvia en cada temporada | *Better data or architecture* 2026 | 1 h, más 3,3 h de etapa 2 | Ninguna |
@@ -149,10 +151,33 @@ Regla de decisión, igual que en la etapa 1: **cada mejora se elige con la valid
 
 ### Fase C: despliegue para el usuario final (25 % de la nota)
 
-1. **Modelo de producción:** el LSTM entrenado con las 248 cuencas (C1 o C2), que es el que se aplicaría a una cuenca nueva. La etapa 2 dice cuánto confiar en él en una cuenca sin estación, por región.
-2. **Entradas en cualquier polígono:** el visor necesita calcular los 48 atributos para sus 80 subcuencas. Varios (suelos y capacidad de uso del IGAC, geología del SGC, número de curva) piden capas que no están en el visor. Hay que definir el subconjunto calculable o usar el modelo solo en las 23 estaciones de CAMELS-COL de Cundinamarca (CORRECCIONES, sección 6).
-3. **Forzantes en producción:** Open-Meteo en lugar de CHIRPS/MSWX. Hay que medir el sesgo en el período común y aplicar la misma fórmula de la evapotranspiración (Hargreaves con Ra × 0,408; ecuaciones en la sección 9.1).
-4. **Arquitectura:** la opción más segura es una app de **Streamlit**, como en el laboratorio 6 (`app.py`, `requirements.txt`, artefactos y repositorio; sección 7 de este plan). Alternativa: exportar el LSTM a ONNX (unos 1,3 MB) y correrlo en el navegador con `onnxruntime-web`, o una API pequeña. Mostrar el hidrograma, el caudal en m³/s y una banda de confianza por región tomada de la etapa 2.
+La rúbrica del despliegue (sección 10) pesa por igual **funcionalidad** (recibe entradas, usa el modelo entrenado y entrega resultados sin errores) e **interfaz para el usuario final** (su lenguaje, resultados comprensibles y **auto contenida**: se usa sin explicación del equipo). La demo de la presentación vale además el 20 % de esa nota y pide **casos realistas**. Por eso se elige lo que funciona seguro, y no la versión más ambiciosa. El 28/11, `03-codigo/visor` solo tiene un video y una imagen: no hay código que reusar.
+
+**Usuario final:** un técnico de una corporación autónoma regional, una alcaldía o un operador de acueducto que necesita una estimación del caudal en un río sin estación. No es hidrólogo de modelos: piensa en m³/s, en meses secos y en crecientes.
+
+**Qué hace la app (Streamlit, como el laboratorio 6):**
+1. **Entrada:** el usuario escoge la cuenca en un mapa o en una lista por departamento y río (las 248 de CAMELS-COL), un rango de fechas y, opcionalmente, un **escenario de lluvia** (por ejemplo, −20 % para un año de El Niño, o +20 %).
+2. **Modelo:** corre en CPU el LSTM de la etapa 2 que **no vio esa cuenca** (el de su partición, ensamble de 3 semillas). Así la app muestra de verdad una predicción "sin estación". Para las 153 cuencas que no están en ninguna partición se usa el LSTM entrenado con todas (C1), y la app lo dice.
+3. **Salida, en el lenguaje del usuario:**
+   - Hidrograma en **m³/s** (mm/día × área / 86,4), con el caudal observado superpuesto **solo como verificación** cuando existe.
+   - Tres números: caudal medio del período, caudal de un mes seco típico y pico del período.
+   - Una **confianza en palabras** según la región y el NSE medido en la etapa 2 (por ejemplo, "Orinoco: confiable, NSE típico 0,64"; "Magdalena-Cauca: poco confiable, úsese solo como orden de magnitud"), con una explicación de una línea de qué significa.
+   - Descarga en CSV.
+4. **Auto contenida:** un texto corto al inicio ("qué hace, qué no hace"), ayudas en cada control y un aviso fijo: el modelo no reemplaza una estación ni sirve para diseñar obras.
+
+**Arquitectura:**
+- Artefactos: los pesos `model_epoch003.pt` (unos 1,3 MB cada uno), `train_data_scaler.yml` y la configuración de cada partición; las forzantes y atributos de las 248 cuencas (unos 100 MB en `.nc`); `docs/flujo-espacial-cuencas.csv` para la confianza por cuenca.
+- Inferencia con `neuralhydrology` o con el `CudaLSTM` cargado en PyTorch CPU; menos de 1 s por cuenca y año.
+- Publicación en **Hugging Face Spaces** o **Streamlit Community Cloud** desde el repositorio, con `requirements.txt`. El artículo describe esta arquitectura en la metodología (la rúbrica lo pide).
+
+**Fuera de alcance, como trabajo futuro:** un polígono dibujado por el usuario. Pide calcular los 48 atributos (suelos del IGAC, geología del SGC, número de curva) y forzantes en tiempo real (Open-Meteo, con la evapotranspiración de la sección 9.1). Se menciona en el artículo y en la presentación.
+
+| # | Tarea | Cuándo |
+|---|---|---|
+| C1 | Script que guarda las simulaciones y artefactos que usa la app, y prueba la inferencia en CPU contra `series_espacial.parquet` (mismo resultado) | 29/11 |
+| C2 | `app.py` con las entradas, salidas y textos de arriba | 29/11 – 30/11 |
+| C3 | Publicarla y probarla de punta a punta en un equipo sin el repositorio | 30/11 |
+| C4 | Tres casos realistas para la demo: una cuenca del Orinoco (funciona bien), una del Caribe (media) y un escenario de El Niño | 1/12 |
 
 ### Fase D: artículo y presentación (1/12 a 4/12)
 
@@ -163,7 +188,8 @@ Regla de decisión, igual que en la etapa 1: **cada mejora se elige con la valid
 - **Resultados:** tabla de la etapa 1 (ya existe), tabla de la etapa 2 con sus tres referencias, figuras de A5 y desempeño por región.
 - **Discusión:** representatividad (glaciares 2026), datos de entrada (CHIRPS, ERA5-Land), intervención humana, la regla de no usar caudal (*hydropower* 2026) y la comparación con la regionalización clásica colombiana (2.6).
 - **Trabajo futuro, con su evidencia:** CAMELS-PE y Caravan por similitud climática, híbridos δ, AlphaEarth, información de cuencas anidadas y curvas de duración regionales.
-- **Presentación de 10 minutos:** problema (El Niño 2026–27, estaciones escasas), propuesta (LSTM regional sin caudal), resultado de la etapa 2 en una figura (mapa) y la aplicación.
+- **Presentación de 12 minutos más 5 de preguntas** (estricto). La rúbrica pesa problema 20 %, solución 25 %, resultados 25 %, demo 20 % y tiempo 10 %. Reparto sugerido: problema 2 min (El Niño 2026–27, estaciones escasas), solución 3 min (datos, LSTM regional sin caudal, validación espacial), resultados 3 min (CDF y mapa de la etapa 2, brecha vista − no vista, limitaciones), demo 3 min (los casos de C4), cierre 1 min. Sin leer las diapositivas. El `.pptx` va al padlet antes de las 5:30 pm del 2/12.
+- **Artículo:** plantilla IEEE (`02-entregables/articulo-latex/bare_jrnl.tex`, hoy 4 páginas con la estructura de la propuesta). Hay que reestructurarlo con los apartados de la rúbrica (sección 10). Meta: **10 páginas con referencias**; la rúbrica tolera hasta 12, y la declaración de uso de IA generativa y los anexos no cuentan. Va también al padlet.
 
 ---
 
@@ -172,12 +198,12 @@ Regla de decisión, igual que en la etapa 1: **cada mejora se elige con la valid
 | Fecha | Qué |
 |---|---|
 | Vie 27/11 | A1–A5. A2 termina de noche. Pedir a Diego `data/processed_era5land` |
-| Sáb 28/11 | A4, A5 y A6 con 3 semillas. Lanzar B1 si llegan los datos; si no, B3. B2, B4, B7 y B8 en CPU |
-| Dom 29/11 | B1 o B3 (noche). Decidir B5 y B6. Despliegue (C) en paralelo |
-| Lun 30/11 | **Congelar resultados.** Bitácora y notebook al día |
-| Mar 1/12 | Presentación y despliegue funcionando |
-| Mié 2/12 | Presentación, 5:30 pm (ppt en el padlet antes) |
-| Jue 3/12 – Vie 4/12 | Artículo final (máximo 10 páginas) |
+| Sáb 28/11 | B1 termina (~10:00); resultados y figuras de ERA5-Land. A6 (notebook, bitácora 24, README). B7 y B8 en CPU. Lanzar B3 de noche (ojo: el PC se apaga a las 20:00 por `apagado-nocturno`) |
+| Dom 29/11 | C1 y C2 (app). B2 y B4 en CPU |
+| Lun 30/11 | **Congelar resultados.** C3: app publicada. Bitácora y notebook al día. Empezar el artículo |
+| Mar 1/12 | Diapositivas y C4 (casos de la demo). Ensayo cronometrado de 12 minutos |
+| Mié 2/12 | Presentación, 5:30 pm (`.pptx` en el padlet antes) |
+| Jue 3/12 – Vie 4/12 | Artículo final (meta 10 páginas con referencias; tope 12), por el enlace y en el padlet |
 
 ## 5. Riesgos
 
@@ -185,7 +211,8 @@ Regla de decisión, igual que en la etapa 1: **cada mejora se elige con la valid
 |---|---|
 | La etapa 2 queda por debajo de 0,50 | Es un resultado válido. Se reporta con las referencias, por región y con la brecha vista − no vista; la literatura (secciones 2.2 y 2.3) explica por qué y qué haría falta |
 | Los datos de ERA5-Land no llegan a esta máquina | La etapa 2 base (C1) ya responde la pregunta. B1 queda como mejora documentada |
-| Corte de luz o suspensión | `flujo_espacial.py` salta las corridas evaluadas; el entrenamiento corre con `systemd-inhibit` |
+| Corte de luz o suspensión | `flujo_espacial.py` salta las corridas evaluadas; el entrenamiento corre con `systemd-inhibit`. El temporizador `apagado-nocturno` apaga el PC a las 20:00 (pasó el 27/11): las corridas largas se lanzan después del apagado o se pausa el temporizador |
+| La app falla en la demo | Se prueba publicada desde otro equipo (C3) y se graba un video de respaldo de los casos de C4 |
 | Fuga de información | Las particiones usan sistemas de ríos completos (verificado en el notebook, sección 4.4). La estandarización y la validación usan solo las cuencas de entrenamiento de cada partición. Las cuencas retenidas no deciden nada |
 
 ---
@@ -312,3 +339,38 @@ con $\sigma_b$ la desviación del caudal de la cuenca *b* **en el período de en
 $$\lambda = \frac{x}{a}, \qquad t = e^{-y/a}, \qquad \varphi_{k+1} = \frac{\pi}{2} - 2\arctan\!\left[t\left(\frac{1 - e\sin\varphi_k}{1 + e\sin\varphi_k}\right)^{e/2}\right]$$
 
 empezando en $\varphi_0 = \pi/2 - 2\arctan t$ y con 10 iteraciones (converge en 3 o 4). Con los grados, la distancia al vecino más cercano se mide con la fórmula de haversine, con un radio de 6371 km.
+
+---
+
+## 10. Cumplimiento de la rúbrica de la entrega final (revisado el 28/11)
+
+Fuente: `01-enunciado/entrega-final/entrega-final.md`. La entrega final vale el 30 % del curso: **artículo 60 %, despliegue 25 %, presentación 15 %**. ✅ cubierto, ⚠️ cubierto a medias (tarea), ❌ falta.
+
+### 10.1 Artículo (60 %)
+
+| Criterio (peso) | Estado | Qué hay y qué falta |
+|---|---|---|
+| **Planteamiento del problema (10 %):** definido, delimitado, importancia con evidencia, objetivos verificables | ⚠️ | El `.tex` tiene contexto y objetivos de la propuesta. **Falta:** delimitar a "caudal medio diario en cuencas sin estación, 248 cuencas de CAMELS-COL, 1981–2022"; reescribir los objetivos para que se pueda decir si se cumplieron (por ejemplo, "NSE mediano ≥ 0,50 en cuencas no vistas": no se cumplió, 0,276), y argumentar la importancia con cifras (cuántas estaciones activas hay frente a cuántos ríos; El Niño 2026–27) |
+| **Estado del arte (10 %):** crítico, actualizado, compara y sitúa el proyecto | ⚠️ | El material está en la sección 2 de este plan, con implicación por familia. **Falta:** escribirlo como comparación, no como lista: una tabla de trabajos (región, n.º de cuencas, validación, NSE en cuenca no vista) con nuestra fila al final, y la brecha: no hay un LSTM regional evaluado en cuencas no vistas de Colombia con validación por sistema de ríos (sección 2.6) |
+| **Metodología (25 %):** datos (fuente, características, calidad), preprocesamiento, técnicas, arquitectura, entrenamiento, **ajuste de hiperparámetros**, **esquema de validación**, herramientas y entorno, decisiones justificadas, **arquitectura de despliegue** | ⚠️ | Todo existe en la bitácora y los notebooks. **Falta:** la tabla top-N de hiperparámetros (sección 6, regla 6); un diagrama del flujo (datos → preprocesamiento → LSTM → validación espacial por sistema de ríos → app); la tabla del checklist de fuga (A6); el entorno (Python 3.11, PyTorch, NeuralHydrology 1.13, RTX 3050 de 6 GB, ~11 min por época), y la arquitectura de la app (fase C) |
+| **Resultados y análisis (20 %):** métricas adecuadas, análisis cuantitativo **y cualitativo** (errores, casos representativos), visualizaciones legibles **comentadas en el texto** | ⚠️ | Cuantitativo listo: etapa 1, etapa 2 con 3 referencias, por región, por partición, vista − no vista, ERA5-Land. Figuras: CDF, mapa, hidrogramas. **Falta:** el análisis cualitativo: por qué falla Magdalena-Cauca y el Pacífico (cuencas pequeñas e intervenidas, lluvia de CHIRPS, balance inconsistente; bitácora 8 y 13), qué pasa en los picos (FHV −28 %: subestima crecientes) y B7/B8 si alcanzan. Cada figura con 2–4 líneas en el texto |
+| **Discusión y aportes (15 %):** por qué se obtuvieron los resultados, aportes, limitaciones (datos, sesgos, validez, generalización), aplicaciones, **ética o interpretabilidad** | ⚠️ | **Falta escribir:** (1) por qué 0,28 y no 0,69 como Kratzert 2019: 248 cuencas frente a 531, forzantes más pobres en el trópico, regiones con pocas cuencas; (2) ERA5-Land mejora la cuenca vista y no la no vista: más entradas, más ajuste a las cuencas vistas; (3) LSTM empata con LightGBM: con 248 cuencas, la ventaja secuencial no alcanza a notarse; (4) limitaciones: 95 cuencas retenidas, sesgo hacia el Caribe y los Andes, intervención humana; (5) interpretabilidad: importancia por permutación (bitácora 20); (6) ética: riesgo de usar la predicción para decisiones de riesgo sin estación, por eso la app muestra la confianza por región y el aviso |
+| **Conclusiones y trabajo futuro (10 %):** hallazgos frente a cada objetivo; líneas concretas desde las limitaciones | ⚠️ | **Falta:** una conclusión por objetivo (cumplido o no, con el número). Trabajo futuro ya identificado (fase D): Caravan y CAMELS-PE por similitud, híbridos δ, AlphaEarth, cuencas anidadas, polígonos arbitrarios en la app |
+| **Estructura y redacción (10 %):** título, resumen (200–300 palabras) y 3–5 palabras clave, introducción, metodología, resultados, discusión, conclusiones y referencias en formato consistente; redacción sin errores; **máximo 12 páginas con referencias**; la declaración de uso de IAG y los anexos no cuentan | ❌ | El `.tex` tiene la estructura de la propuesta (4 páginas). **Falta:** reestructurar con estos apartados, IEEE como estilo único de citas (la plantilla ya lo es), un enlace al repositorio en un anexo y la **declaración de uso de IA generativa** (se usó Claude Code para código, revisión de literatura y redacción). El enunciado dice "no más de 10 páginas" y la rúbrica "no excede 12": la meta es 10 |
+
+### 10.2 Despliegue (25 %)
+
+| Criterio (peso) | Estado | Plan |
+|---|---|---|
+| **Funcionalidad (50 %):** recibe entradas, usa el modelo entrenado, entrega resultados sin errores | ❌ | Fase C, tareas C1 a C3. El modelo de cada partición predice la cuenca que no vio; prueba de punta a punta desde otro equipo |
+| **Interfaz para el usuario final (50 %):** lenguaje del contexto, resultados comprensibles, auto contenida | ❌ | Fase C: m³/s y no mm/día, confianza en palabras por región, escenario de El Niño, texto de "qué hace y qué no hace", ayudas en cada control. Nada de "NSE" sin explicar en la pantalla principal |
+
+### 10.3 Presentación (15 %)
+
+| Criterio (peso) | Estado | Plan |
+|---|---|---|
+| Problema (20 %) | ⚠️ | 2 min: estaciones escasas, El Niño 2026–27, por qué importa el caudal en un río sin estación |
+| Solución (25 %) | ⚠️ | 3 min: datos, LSTM regional sin caudal, validación espacial por sistema de ríos; una diapositiva con el diagrama |
+| Resultados y análisis (25 %) | ⚠️ | 3 min: CDF y mapa, la brecha vista − no vista y las limitaciones dichas de frente (meta no alcanzada) |
+| Demo (20 %) | ❌ | 3 min con los casos de C4; video de respaldo |
+| Presentación y tiempo (10 %) | ❌ | Ensayo cronometrado el 1/12; sin leer las diapositivas; `.pptx` en el padlet antes de las 5:30 pm |
