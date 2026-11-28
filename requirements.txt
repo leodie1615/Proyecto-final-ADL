@@ -16,3 +16,5 @@ lightgbm
 
 # Solo para descargar ERA5-Land (preprocesamiento, sección 2.1); requiere cuenta de Copernicus CDS
 # cdsapi
+onnx
+onnxruntime
