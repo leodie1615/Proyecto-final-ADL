@@ -1,0 +1,31 @@
+umbral,T (años),modelo,eventos observados,eventos del modelo,aciertos,coinciden,recall,precisión,F1,cuencas
+umbral observado,2,LSTM (ensamble),2045,509,82,82,0.04,0.161,0.064,78
+umbral propio,2,LSTM (ensamble),2045,1830,304,304,0.149,0.166,0.157,78
+umbral observado,5,LSTM (ensamble),623,140,13,13,0.021,0.093,0.034,78
+umbral propio,5,LSTM (ensamble),623,608,63,63,0.101,0.104,0.102,78
+umbral observado,10,LSTM (ensamble),273,58,4,4,0.015,0.069,0.024,78
+umbral propio,10,LSTM (ensamble),273,275,18,18,0.066,0.065,0.066,78
+umbral observado,2,LSTM base (ensamble),2045,445,64,64,0.031,0.144,0.051,78
+umbral propio,2,LSTM base (ensamble),2045,1831,283,283,0.138,0.155,0.146,78
+umbral observado,5,LSTM base (ensamble),623,209,8,8,0.013,0.038,0.019,78
+umbral propio,5,LSTM base (ensamble),623,611,47,47,0.075,0.077,0.076,78
+umbral observado,10,LSTM base (ensamble),273,149,4,4,0.015,0.027,0.019,78
+umbral propio,10,LSTM base (ensamble),273,258,14,14,0.051,0.054,0.053,78
+umbral observado,2,LightGBM regional,2045,557,70,70,0.034,0.126,0.054,78
+umbral propio,2,LightGBM regional,2045,1980,302,302,0.148,0.153,0.15,78
+umbral observado,5,LightGBM regional,623,198,10,10,0.016,0.051,0.024,78
+umbral propio,5,LightGBM regional,623,608,53,53,0.085,0.087,0.086,78
+umbral observado,10,LightGBM regional,273,109,3,3,0.011,0.028,0.016,78
+umbral propio,10,LightGBM regional,273,240,15,15,0.055,0.062,0.058,78
+umbral observado,2,Vecino más cercano,2045,2789,242,242,0.118,0.087,0.1,78
+umbral propio,2,Vecino más cercano,2045,2093,264,264,0.129,0.126,0.128,78
+umbral observado,5,Vecino más cercano,623,1656,57,57,0.091,0.034,0.05,78
+umbral propio,5,Vecino más cercano,623,558,37,37,0.059,0.066,0.063,78
+umbral observado,10,Vecino más cercano,273,1276,24,24,0.088,0.019,0.031,78
+umbral propio,10,Vecino más cercano,273,258,11,11,0.04,0.043,0.041,78
+umbral observado,2,Climatología de donantes,2045,62,0,0,0.0,0.0,,78
+umbral propio,2,Climatología de donantes,2045,1426,39,39,0.019,0.027,0.022,78
+umbral observado,5,Climatología de donantes,623,22,0,0,0.0,0.0,,78
+umbral propio,5,Climatología de donantes,623,996,7,7,0.011,0.007,0.009,78
+umbral observado,10,Climatología de donantes,273,22,0,0,0.0,0.0,,78
+umbral propio,10,Climatología de donantes,273,619,0,0,0.0,0.0,,78

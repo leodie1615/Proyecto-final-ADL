@@ -983,6 +983,15 @@ Diferencias por cuenca (A − B):
   - el volumen sale bien: β = 0,97;
   - las 22 cuencas con NSE < 0 están en Córdoba (cuenca del Sinú, 6), en el suroccidente (Nariño, Cauca y Putumayo, 7) y en la Sierra Nevada (4). Son más pequeñas que el resto (870 km² de área mediana, frente a 1420).
 
+**Análisis de errores** (28/11; `src/errores_espacial.py`; notebook, sección 10.4):
+- **Crecientes** (mejora B7), en 78 cuencas con al menos 10 años completos; umbrales de una Gumbel ajustada a los máximos anuales; un evento se detecta si el modelo tiene uno a ±2 días:
+  - con el umbral propio de la simulación (lo único calculable sin estación), el LSTM con ERA5-Land detecta el 15 % de los eventos de 2 años (F1 = 0,16) y el 10 % de los de 5 años;
+  - con el umbral observado, solo el 4 %;
+  - el vecino más cercano detecta el 12 % con el umbral observado, pero con una precisión del 9 %;
+  - con ±7 días, el F1 del LSTM sube a 0,26; con ±15 días, a 0,34.
+  - **Conclusión: el modelo no sirve para alertas de creciente en cuencas sin estación.**
+- **Residuos** (mejora B8): la correlación mediana de los errores diarios entre cuencas del mismo sistema de ríos a menos de 50 km es de 0,38; entre sistemas distintos a la misma distancia, 0,16; después de 100 km, casi 0. LightGBM muestra lo mismo. Los errores son regionales: las 95 cuencas no son pruebas independientes y los p de Wilcoxon son optimistas.
+
 **Decisiones.**
 - **El modelo final sigue siendo el LSTM con ERA5-Land.** Se eligió en la etapa 1 (sección 22) y la etapa 2 no lo contradice.
 - El promedio con LightGBM no se elige: su ventaja (59 de 95 cuencas, p = 0,003) se observó mirando las cuencas retenidas, y la mediana casi no cambia.
